@@ -29,7 +29,7 @@ const db = new Database("data/database.db", async (error) => {
 
 const app = express();
 
-const PORT = 8080;
+const PORT = config.port;
 
 app.get("/api/v1/tws/ping", async (req, res) => {
     res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
