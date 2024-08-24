@@ -1,0 +1,16 @@
+{
+  "name": "texture-workshop-api",
+  "description": "Backend of the new Texture Workshop API",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "M336",
+  "license": "AGPL-3.0-only",
+  "dependencies": {
+    "body-parser": "^1.20.2",
+    "express": "^4.19.2",
+    "fs": "^0.0.1-security",
+    "http": "^0.0.1-security",
+    "sqlite3": "^5.1.7",
+    "validator": "^13.12.0"
+  }
+}
