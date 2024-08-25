@@ -43,7 +43,6 @@ app.get("/api/v1/tws/ping", async (req, res) => {
 });
 
 app.get("/api/v1/tws/getTPs", async (req, res) => {
-    res.setHeader("Cache-Control", "public, max-age=1800, immutable"); // Cache for 30 minutes
     res.setHeader("Content-Type", "application/json");
 
     let result = {};
@@ -66,6 +65,7 @@ app.get("/api/v1/tws/getTPs", async (req, res) => {
                     packFeature: row.feature
                 }
             })).then(async () => {
+                res.setHeader("Cache-Control", "public, max-age=1800, immutable"); // Cache for 30 minutes
                 return res.status(200).json(result);
             }).catch(async error => {
                 log.error("Error fetching data from SQLite:", error.message);
