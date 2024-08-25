@@ -1,9 +1,9 @@
 CREATE TABLE "texturepacks" (
 	"ID" INTEGER NOT NULL,
 	"name" TEXT NOT NULL,
-	"description" TEXT NOT NULL DEFAULT 'N/A',
-	"creator" TEXT NOT NULL DEFAULT 'N/A',
-	"logo" TEXT NOT NULL DEFAULT 'https://robtopgames.com/Images/icon_200.png',
+	"description" TEXT NOT NULL DEFAULT 'Ti9B',
+	"creator" TEXT NOT NULL DEFAULT 'Ti9B',
+	"logo" TEXT NOT NULL DEFAULT 'aHR0cHM6Ly9yb2J0b3BnYW1lcy5jb20vSW1hZ2VzL2ljb25fMjAwLnBuZw',
 	"download" TEXT NOT NULL,
 	"version" TEXT NOT NULL DEFAULT '1.0.0',
 	"gameVersion" TEXT NOT NULL DEFAULT '2.206',
