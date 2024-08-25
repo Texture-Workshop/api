@@ -100,7 +100,7 @@ app.post("/api/v1/tws/addTP", async (req, res) => {
         if (!token || !name || !description || !creator || !logo || !download || !version || !gameVersion || !feature) return res.status(400).json({ success: false, cause: "Bad Request" });
 
         // Do not continue if the token is not valid
-        if (token !== config.token) return res.status(403).json({ success: false, cause: "Forbidden" });
+        if (token != config.token) return res.status(403).json({ success: false, cause: "Forbidden" });
         name = await encode.base64encode(name);
         description = await encode.base64encode(description);
         creator = await encode.base64encode(creator);
