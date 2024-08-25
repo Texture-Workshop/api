@@ -17,6 +17,46 @@ const log = {
     }
 };
 
+const encode = {
+    base64encode: async (string) => {
+        if (!string) return undefined;
+        try {
+            return Buffer.from(string, 'utf-8').toString('base64');
+        } catch (error) {
+            log.error("Error while trying to encode string to base64:", error);
+            return undefined;
+        }
+    },
+    base64decode: async (string) => {
+        if (!string) return undefined;
+        try {
+            return Buffer.from(string, 'base64').toString('utf-8');
+        } catch (error) {
+            log.error("Error while trying to decode base64 to string:", error);
+            return undefined;
+        }
+    },
+    base64urlencode: async (string) => {
+        if (!string) return undefined;
+        try {
+            return Buffer.from(string, 'utf-8').toString('base64url');
+        } catch (error) {
+            log.error("Error while trying to encode string to base64url:", error);
+            return undefined;
+        }
+    },
+    base64urldecode: async (string) => {
+        if (!string) return undefined;
+        try {
+            return Buffer.from(string, 'base64url').toString('utf-8');
+        } catch (error) {
+            log.error("Error while trying to decode base64url to string:", error);
+            return undefined;
+        }
+    }
+}
+
 module.exports = {
-    log
+    log,
+    encode
 };

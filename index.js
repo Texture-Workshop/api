@@ -5,7 +5,7 @@ const { Database } = require("sqlite3").verbose();
 const bodyParser = require('body-parser');
 const validator = require('validator');
 
-const { log } = require("./util/functions");
+const { log, encode } = require("./util/functions");
 const config = require("./config.json");
 
 const db = new Database("data/database.db", async (error) => {
@@ -16,7 +16,7 @@ const db = new Database("data/database.db", async (error) => {
         try {
             db.exec(await fs.readFile("data/database.sql", "utf8"), (error) => { // Execute SQL script
                 if (error) {
-                    log.error("Error executing SQL script:", error.message);
+                    log.warn("Error executing SQL script:", error.message);
                 } else {
                     log.info("DB: Tables created or already exist.");
                 }
@@ -54,20 +54,23 @@ app.get("/api/v1/tws/getTPs", async (req, res) => {
                 return res.status(500).json({ success: false, cause: "Internal Server Error" });
             }
 
-            rows.forEach((row, index) => {
+            Promise.all(rows.map(async (row, index) => {
                 result[index + 1] = {
                     packID: row.ID,
-                    packName: row.name,
-                    downloadLink: row.download,
-                    packLogo: row.logo,
-                    packDescription: row.description,
-                    packCreator: row.creator,
+                    packName: await encode.base64decode(row.name),
+                    downloadLink: await encode.base64urldecode(row.download),
+                    packLogo: await encode.base64urldecode(row.logo),
+                    packDescription: await encode.base64decode(row.description),
+                    packCreator: await encode.base64decode(row.creator),
                     packVersion: row.version,
                     packFeature: row.feature
-                };
+                }
+            })).then(async () => {
+                return res.status(200).json(result);
+            }).catch(async error => {
+                log.error("Error fetching data from SQLite:", error.message);
+                return res.status(500).json({ success: false, cause: "Internal Server Error" });
             });
-    
-            return res.status(200).json(result);
         });
     } catch (error) {
         log.error("Error fetching data from SQLite:", error.message);
@@ -96,20 +99,26 @@ app.post("/api/v1/tws/addTP", async (req, res) => {
 
         // Do not continue if the token is not valid
         if (token != config.token) return res.status(403).json({ success: false, cause: "Forbidden"});
+        name = await encode.base64encode(name);
+        description = await encode.base64encode(description);
+        creator = await encode.base64encode(creator);
 
         // Cleaning up potential SQL injection prompts
-        name = name.replace(/[^A-Za-z0-9 ]/g, '');
+        /*name = name.replace(/[^A-Za-z0-9 ]/g, '');
         description = description.replace(/[^A-Za-z0-9 ]/g, '');
         creator = creator.replace(/[^A-Za-z0-9 ]/g, '');
 
         // Same for logo and download, additionally check if they actually are URLs
-        logo = logo.replace(/[^A-Za-z0-9:\/._\-]/g, '');
+        logo = logo.replace(/[^A-Za-z0-9:\/._\-]/g, '');*/
         if (!validator.isURL(logo, { protocols: ['http', 'https'], require_tld: true })) return res.status(400).json({ success: false, cause: "Invalid Logo URL"});
-        download = download.replace(/[^A-Za-z0-9:\/._\-]/g, '');
+        /*download = download.replace(/[^A-Za-z0-9:\/._\-]/g, '');*/
+        logo = await encode.base64urlencode(logo);
+        
         if (!validator.isURL(download, { protocols: ['http', 'https'], require_tld: true })) return res.status(400).json({ success: false, cause: "Invalid Download Link"});
-    
-        version = version.replace(/[^A-Za-z0-9 :\/?]/g);
-        gameVersion = gameVersion.replace(/[^A-Za-z0-9 :\/?]/g);
+        download = await encode.base64urlencode(download);
+        
+        version = version.replace(/[^A-Za-z0-9 :\/?.]/g, '');
+        gameVersion = gameVersion.replace(/[^A-Za-z0-9 :\/?.]/g, '');
 
         feature = feature.replace(/[^0-9]/g, '');
         if (!['0', '1'].includes(feature)) return res.status(400).json({ success: false, cause: "Invalid Feature boolean (must be either 0 or 1)"});
@@ -117,17 +126,34 @@ app.post("/api/v1/tws/addTP", async (req, res) => {
         // Check if all fields are here again
         if (!name || !description || !creator || !logo || !download || !version || !gameVersion || !feature) return res.status(400).json({ success: false, cause: "Bad Request (One or multiple fields have been cleared after security check)"});
 
-        db.run(
-            `INSERT INTO texturepacks (name, description, creator, logo, download, version, gameVersion, feature) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-            [name, description, creator, logo, download, version, gameVersion, feature], function (error) {
-            if (error) {
-                log.error('Error inserting texture pack into SQLite:', error.message);
-                return res.status(500).json({ success: false, cause: 'Internal Server Error' });
-            }
-            
-            log.info(`Added Texture Pack "${name}" by ${creator} (Featured: ${feature})`);
-            return res.status(200).json({ success: true, message: 'Texture pack added!' });
+        // Check if a texture pack with the same name already exists
+        let existingPack = await new Promise((resolve, reject) => {
+            db.get("SELECT 1 FROM texturepacks WHERE name = ?", [name], (error, row) => {
+                if (error) return reject(error);
+                resolve(row);
+            });
+        });
+
+        if (existingPack) {
+            return res.status(409).json({ success: false, cause: "This Texture Pack already exists!" });
+        }
+        
+        await new Promise((resolve, reject) => {
+            db.run(
+                `INSERT INTO texturepacks (name, description, creator, logo, download, version, gameVersion, feature) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+                [name, description, creator, logo, download, version, gameVersion, feature], async function (error) {
+                    if (error) {
+                        log.error('Error inserting texture pack into SQLite:', error.message);
+                        reject(error);
+                        return res.status(500).json({ success: false, cause: 'Internal Server Error' });
+                        
+                    }
+                    log.info(`Added Texture Pack "${await encode.base64decode(name)}" by ${await encode.base64decode(creator)} (Featured: ${feature})`);
+                    resolve();
+                    return res.status(200).json({ success: true, message: 'Texture pack added!' });
+                }
+            );
         });
     } catch (error) {
         log.error("Error adding a texture pack:", error.message);
@@ -206,7 +232,7 @@ app.post("/api/v1/tws/deleteTP", async (req, res) => {
         if (!id) return res.status(400).json({ success: false, cause: "Bad Request (ID deleted by security check)"});
 
         db.run(
-            `DELETE FROM texturepacks WHERE ID = ?`, [id], function (error) {
+            `DELETE FROM texturepacks WHERE ID = ?`, [id], async function (error) {
             if (error) {
                 log.error('Error deleting texture pack:', error.message);
                 return res.status(500).json({ success: false, cause: 'Internal Server Error' });
