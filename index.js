@@ -4,9 +4,12 @@ const fs = require("fs").promises;
 const { Database } = require("sqlite3").verbose();
 const bodyParser = require('body-parser');
 const validator = require('validator');
+const path = require('path');
+const favicon = require('serve-favicon');
 
 const { log, encode } = require("./util/functions");
 const config = require("./config.json");
+
 
 const db = new Database("data/database.db", async (error) => {
     if (error) {
@@ -30,6 +33,9 @@ const db = new Database("data/database.db", async (error) => {
 const app = express();
 
 const PORT = config.port;
+
+// Set the favicon
+app.use(favicon(path.join(__dirname, "assets", "favicon.ico")));
 
 app.get("/api/v1/tws/ping", async (req, res) => {
     res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
