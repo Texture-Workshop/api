@@ -7,17 +7,17 @@ const validator = require('validator');
 const path = require('path');
 const favicon = require('serve-favicon');
 
-const { log, encode } = require("./util/functions");
-const config = require("./config.json");
+const { log, encode } = require(path.join(__dirname, "util", "functions.js"));
+const config = require(path.join(__dirname, "config.json"));
 
 
-const db = new Database("data/database.db", async (error) => {
+const db = new Database(path.join(__dirname, "data", "database.db"), async (error) => {
     if (error) {
         log.error("Error opening SQLite:", error.message);
     } else {
         log.info("Connected to SQLite");
         try {
-            db.exec(await fs.readFile("data/database.sql", "utf8"), async (error) => { // Execute SQL script
+            db.exec(await fs.readFile(path.join(__dirname, "data", "database.sql"), "utf8"), async (error) => { // Execute SQL script
                 if (error) {
                     log.warn("Error executing SQL script:", error.message);
                 } else {
@@ -87,7 +87,7 @@ app.get("/api/v1/tws/getTPs", async (req, res) => {
 // GET method to send the form
 app.get("/api/v1/tws/addTP", async (req, res) => {
     try {
-        return res.send(await fs.readFile("pages/addTP.html", "utf8"));
+        return res.send(await fs.readFile(path.join(__dirname, "pages", "addTP.html"), "utf8"));
     } catch (error) {
         log.error("Error sending the addTP.html file:", error.message);
         return res.status(500).send("Internal Server Error")
@@ -169,7 +169,7 @@ app.post("/api/v1/tws/addTP", async (req, res) => {
 
 app.get("/api/v1/tws/featureTP", async (req, res) => {
     try {
-        return res.send(await fs.readFile("pages/featureTP.html", "utf8"));
+        return res.send(await fs.readFile(path.join(__dirname, "pages", "featureTP.html"), "utf8"));
     } catch (error) {
         log.error("Error sending the featureTP.html file:", error.message);
         return res.status(500).send("Internal Server Error")
@@ -218,7 +218,7 @@ app.post("/api/v1/tws/featureTP", async (req, res) => {
 
 app.get("/api/v1/tws/updateTP", async (req, res) => {
     try {
-        return res.send(await fs.readFile("pages/updateTP.html", "utf8"));
+        return res.send(await fs.readFile(path.join(__dirname, "pages", "updateTP.html"), "utf8"));
     } catch (error) {
         log.error("Error sending the updateTP.html file:", error.message);
         return res.status(500).send("Internal Server Error")
@@ -339,7 +339,7 @@ app.post("/api/v1/tws/updateTP", async (req, res) => {
 
 app.get("/api/v1/tws/deleteTP", async (req, res) => {
     try {
-        return res.send(await fs.readFile("pages/deleteTP.html", "utf8"));
+        return res.send(await fs.readFile(path.join(__dirname, "pages", "deleteTP.html"), "utf8"));
     } catch (error) {
         log.error("Error sending the deleteTP.html file:", error.message);
         return res.status(500).send("Internal Server Error")
