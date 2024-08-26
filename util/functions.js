@@ -21,7 +21,7 @@ const encode = {
     base64encode: async (string) => {
         if (!string) return;
         try {
-            return Buffer.from(string).toString('base64');
+            return Buffer.from(string).toString("base64");
         } catch (error) {
             log.error("Error while trying to encode string to base64:", error);
             return;
@@ -30,7 +30,7 @@ const encode = {
     base64decode: async (string) => {
         if (!string) return;
         try {
-            return Buffer.from(string, 'base64').toString();
+            return Buffer.from(string, "base64").toString();
         } catch (error) {
             log.error("Error while trying to decode base64 to string:", error);
             return;
@@ -39,7 +39,7 @@ const encode = {
     base64urlencode: async (string) => {
         if (!string) return;
         try {
-            return Buffer.from(string).toString('base64url');
+            return Buffer.from(string).toString("base64url");
         } catch (error) {
             log.error("Error while trying to encode string to base64url:", error);
             return;
@@ -48,7 +48,7 @@ const encode = {
     base64urldecode: async (string) => {
         if (!string) return;
         try {
-            return Buffer.from(string, 'base64url').toString();
+            return Buffer.from(string, "base64url").toString();
         } catch (error) {
             log.error("Error while trying to decode base64url to string:", error);
             return;

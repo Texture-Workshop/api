@@ -2,10 +2,10 @@ const express = require("express");
 const http = require("http");
 const fs = require("fs").promises;
 const { Database } = require("sqlite3").verbose();
-const bodyParser = require('body-parser');
-const validator = require('validator');
-const path = require('path');
-const favicon = require('serve-favicon');
+const bodyParser = require("body-parser");
+const validator = require("validator");
+const path = require("path");
+const favicon = require("serve-favicon");
 
 const { log, encode } = require(path.join(__dirname, "util", "functions.js"));
 const config = require(path.join(__dirname, "config.json"));
@@ -112,24 +112,24 @@ app.post("/api/v1/tws/addTP", async (req, res) => {
         creator = await encode.base64encode(creator);
 
         // Cleaning up potential SQL injection prompts
-        /*name = name.replace(/[^A-Za-z0-9 ]/g, '');
-        description = description.replace(/[^A-Za-z0-9 ]/g, '');
-        creator = creator.replace(/[^A-Za-z0-9 ]/g, '');
+        /*name = name.replace(/[^A-Za-z0-9 ]/g, "");
+        description = description.replace(/[^A-Za-z0-9 ]/g, "");
+        creator = creator.replace(/[^A-Za-z0-9 ]/g, "");
 
         // Same for logo and download, additionally check if they actually are URLs
-        logo = logo.replace(/[^A-Za-z0-9:\/._\-]/g, '');*/
-        if (!validator.isURL(logo, { protocols: ['http', 'https'], require_tld: true })) return res.status(400).json({ success: false, cause: "Invalid Logo URL" });
-        /*download = download.replace(/[^A-Za-z0-9:\/._\-]/g, '');*/
+        logo = logo.replace(/[^A-Za-z0-9:\/._\-]/g, "");*/
+        if (!validator.isURL(logo, { protocols: ["http", "https"], require_tld: true })) return res.status(400).json({ success: false, cause: "Invalid Logo URL" });
+        /*download = download.replace(/[^A-Za-z0-9:\/._\-]/g, "");*/
         logo = await encode.base64urlencode(logo);
 
-        if (!validator.isURL(download, { protocols: ['http', 'https'], require_tld: true })) return res.status(400).json({ success: false, cause: "Invalid Download Link" });
+        if (!validator.isURL(download, { protocols: ["http", "https"], require_tld: true })) return res.status(400).json({ success: false, cause: "Invalid Download Link" });
         download = await encode.base64urlencode(download);
 
-        version = version.replace(/[^A-Za-z0-9 :\/?.]/g, '');
-        gameVersion = gameVersion.replace(/[^A-Za-z0-9 :\/?.]/g, '');
+        version = version.replace(/[^A-Za-z0-9 :\/?.]/g, "");
+        gameVersion = gameVersion.replace(/[^A-Za-z0-9 :\/?.]/g, "");
 
-        feature = feature.replace(/[^0-9]/g, '');
-        if (!['0', '1'].includes(feature)) return res.status(400).json({ success: false, cause: "Invalid Feature boolean (must be either 0 or 1)" });
+        feature = feature.replace(/[^0-9]/g, "");
+        if (!["0", "1"].includes(feature)) return res.status(400).json({ success: false, cause: "Invalid Feature boolean (must be either 0 or 1)" });
 
         // Check if all fields are here again
         if (!name || !description || !creator || !logo || !download || !version || !gameVersion || !feature) return res.status(400).json({ success: false, cause: "Bad Request (One or multiple fields have been cleared after security check)" });
@@ -152,12 +152,12 @@ app.post("/api/v1/tws/addTP", async (req, res) => {
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
                 [name, description, creator, logo, download, version, gameVersion, feature], async (error) => {
                     if (error) {
-                        log.error('Error inserting texture pack into SQLite:', error.message);
-                        resolve(res.status(500).json({ success: false, cause: 'Internal Server Error' }));
+                        log.error("Error inserting texture pack into SQLite:", error.message);
+                        resolve(res.status(500).json({ success: false, cause: "Internal Server Error" }));
 
                     }
                     log.info(`Added Texture Pack "${await encode.base64decode(name)}" by ${await encode.base64decode(creator)} (Featured: ${feature})`);
-                    resolve(res.status(200).json({ success: true, message: 'Texture pack added!' }));
+                    resolve(res.status(200).json({ success: true, message: "Texture pack added!" }));
                 }
             );
         });
@@ -187,27 +187,27 @@ app.post("/api/v1/tws/featureTP", async (req, res) => {
         // Do not continue if the token is not valid
         if (token != config.token) return res.status(403).json({ success: false, cause: "Forbidden" });
 
-        id = id.replace(/[^0-9]/g, '');
+        id = id.replace(/[^0-9]/g, "");
 
-        feature = feature.replace(/[^0-9]/g, '');
-        if (!['0', '1'].includes(feature)) return res.status(400).json({ success: false, cause: "Invalid Feature boolean (must be either 0 or 1)" });
+        feature = feature.replace(/[^0-9]/g, "");
+        if (!["0", "1"].includes(feature)) return res.status(400).json({ success: false, cause: "Invalid Feature boolean (must be either 0 or 1)" });
 
-        // Check if ID's still there
+        // Check if ID"s still there
         if (!id || !feature) return res.status(400).json({ success: false, cause: "Bad Request (One or multiple fields have been cleared after security check)" });
 
         db.run(
             `UPDATE texturepacks SET feature = ? WHERE ID = ?`, [feature, id], async (error) => {
                 if (error) {
-                    log.error('Error featuring/unfeaturing texture pack:', error.message);
-                    return res.status(500).json({ success: false, cause: 'Internal Server Error' });
+                    log.error("Error featuring/unfeaturing texture pack:", error.message);
+                    return res.status(500).json({ success: false, cause: "Internal Server Error" });
                 }
 
                 if (feature == 0) {
                     log.info(`Unfeatured ${id}`);
-                    return res.status(200).json({ success: true, message: 'Texture pack unfeatured!' });
+                    return res.status(200).json({ success: true, message: "Texture pack unfeatured!" });
                 } else {
                     log.info(`Featured ${id}`);
-                    return res.status(200).json({ success: true, message: 'Texture pack featured!' });
+                    return res.status(200).json({ success: true, message: "Texture pack featured!" });
                 }
             });
     } catch (error) {
@@ -236,30 +236,30 @@ app.post("/api/v1/tws/updateTP", async (req, res) => {
         // Do not continue if the token is not valid
         if (token != config.token) return res.status(403).json({ success: false, cause: "Forbidden" });
 
-        id = id.replace(/[^0-9]/g, '');
+        id = id.replace(/[^0-9]/g, "");
 
-        // Check if ID's still there
+        // Check if ID"s still there
         if (!id) return res.status(400).json({ success: false, cause: "Bad Request (ID deleted by security check)" });
 
         switch (type) {
             case "version":
                 if (!download || !version || !gameVersion) return res.status(400).json({ success: false, cause: "Bad Request" });
 
-                if (!validator.isURL(download, { protocols: ['http', 'https'], require_tld: true })) return res.status(400).json({ success: false, cause: "Invalid Download Link" });
+                if (!validator.isURL(download, { protocols: ["http", "https"], require_tld: true })) return res.status(400).json({ success: false, cause: "Invalid Download Link" });
                 download = await encode.base64urlencode(download);
 
-                version = version.replace(/[^A-Za-z0-9 :\/?.]/g, '');
-                gameVersion = gameVersion.replace(/[^A-Za-z0-9 :\/?.]/g, '');
+                version = version.replace(/[^A-Za-z0-9 :\/?.]/g, "");
+                gameVersion = gameVersion.replace(/[^A-Za-z0-9 :\/?.]/g, "");
 
                 db.run(
                     `UPDATE texturepacks SET download = ?, version = ?, gameVersion = ? WHERE ID = ?`, [download, version, gameVersion, id], async (error) => {
                         if (error) {
-                            log.error('Error updating texture pack:', error.message);
-                            return res.status(500).json({ success: false, cause: 'Internal Server Error' });
+                            log.error("Error updating texture pack:", error.message);
+                            return res.status(500).json({ success: false, cause: "Internal Server Error" });
                         }
 
                         log.info(`Updated ${id} to ${version} (${gameVersion})`);
-                        return res.status(200).json({ success: true, message: 'Texture pack updated!' })
+                        return res.status(200).json({ success: true, message: "Texture pack updated!" })
                     });
                 break;
 
@@ -270,12 +270,12 @@ app.post("/api/v1/tws/updateTP", async (req, res) => {
                 db.run(
                     `UPDATE texturepacks SET name = ? WHERE ID = ?`, [name, id], async (error) => {
                         if (error) {
-                            log.error('Error updating texture pack\'s name:', error.message);
-                            return res.status(500).json({ success: false, cause: 'Internal Server Error' });
+                            log.error("Error updating texture pack\"s name:", error.message);
+                            return res.status(500).json({ success: false, cause: "Internal Server Error" });
                         }
 
-                        log.info(`Updated ${id}'s name to ${await encode.base64decode(name)}`);
-                        return res.status(200).json({ success: true, message: 'Texture pack\'s name updated!' })
+                        log.info(`Updated ${id}"s name to ${await encode.base64decode(name)}`);
+                        return res.status(200).json({ success: true, message: "Texture pack\"s name updated!" })
                     });
                 break;
 
@@ -286,12 +286,12 @@ app.post("/api/v1/tws/updateTP", async (req, res) => {
                 db.run(
                     `UPDATE texturepacks SET description = ? WHERE ID = ?`, [description, id], async (error) => {
                         if (error) {
-                            log.error('Error updating texture pack\'s description:', error.message);
-                            return res.status(500).json({ success: false, cause: 'Internal Server Error' });
+                            log.error("Error updating texture pack\"s description:", error.message);
+                            return res.status(500).json({ success: false, cause: "Internal Server Error" });
                         }
 
-                        log.info(`Updated ${id}'s description to ${await encode.base64decode(description)}`);
-                        return res.status(200).json({ success: true, message: 'Texture pack\'s description updated!' })
+                        log.info(`Updated ${id}"s description to ${await encode.base64decode(description)}`);
+                        return res.status(200).json({ success: true, message: "Texture pack\"s description updated!" })
                     });
                 break;
 
@@ -302,34 +302,34 @@ app.post("/api/v1/tws/updateTP", async (req, res) => {
                 db.run(
                     `UPDATE texturepacks SET creator = ? WHERE ID = ?`, [creator, id], async (error) => {
                         if (error) {
-                            log.error('Error updating texture pack\'s creator(s):', error.message);
-                            return res.status(500).json({ success: false, cause: 'Internal Server Error' });
+                            log.error("Error updating texture pack\"s creator(s):", error.message);
+                            return res.status(500).json({ success: false, cause: "Internal Server Error" });
                         }
 
-                        log.info(`Updated ${id}'s creator(s) to ${await encode.base64decode(creator)}`);
-                        return res.status(200).json({ success: true, message: 'Texture pack\'s creator(s) updated!' })
+                        log.info(`Updated ${id}"s creator(s) to ${await encode.base64decode(creator)}`);
+                        return res.status(200).json({ success: true, message: "Texture pack\"s creator(s) updated!" })
                     });
                 break;
 
             case "logo":
                 if (!logo) return res.status(400).json({ success: false, cause: "Bad Request" });
 
-                if (!validator.isURL(logo, { protocols: ['http', 'https'], require_tld: true })) return res.status(400).json({ success: false, cause: "Invalid Logo URL" });
+                if (!validator.isURL(logo, { protocols: ["http", "https"], require_tld: true })) return res.status(400).json({ success: false, cause: "Invalid Logo URL" });
                 logo = await encode.base64urlencode(logo);
                 db.run(
                     `UPDATE texturepacks SET logo = ? WHERE ID = ?`, [logo, id], async (error) => {
                         if (error) {
-                            log.error('Error updating texture pack\'s logo:', error.message);
-                            return res.status(500).json({ success: false, cause: 'Internal Server Error' });
+                            log.error("Error updating texture pack\"s logo:", error.message);
+                            return res.status(500).json({ success: false, cause: "Internal Server Error" });
                         }
 
-                        log.info(`Updated ${id}'s logo`);
-                        return res.status(200).json({ success: true, message: 'Texture pack\'s logo updated!' })
+                        log.info(`Updated ${id}"s logo`);
+                        return res.status(200).json({ success: true, message: "Texture pack\"s logo updated!" })
                     });
                 break;
 
             default:
-                return res.status(400).json({ success: false, cause: 'what' });
+                return res.status(400).json({ success: false, cause: "what" });
         }
     } catch (error) {
         log.error("Error updating a texture pack:", error.message);
@@ -357,20 +357,20 @@ app.post("/api/v1/tws/deleteTP", async (req, res) => {
         // Do not continue if the token is not valid
         if (token != config.token) return res.status(403).json({ success: false, cause: "Forbidden" });
 
-        id = id.replace(/[^0-9]/g, '');
+        id = id.replace(/[^0-9]/g, "");
 
-        // Check if ID's still there
+        // Check if ID"s still there
         if (!id) return res.status(400).json({ success: false, cause: "Bad Request (ID deleted by security check)" });
 
         db.run(
             `DELETE FROM texturepacks WHERE ID = ?`, [id], async (error) => {
                 if (error) {
-                    log.error('Error deleting texture pack:', error.message);
-                    return res.status(500).json({ success: false, cause: 'Internal Server Error' });
+                    log.error("Error deleting texture pack:", error.message);
+                    return res.status(500).json({ success: false, cause: "Internal Server Error" });
                 }
 
                 log.info(`Deleted ${id}`);
-                return res.status(200).json({ success: true, message: 'Texture pack deleted!' });
+                return res.status(200).json({ success: true, message: "Texture pack deleted!" });
             });
     } catch (error) {
         log.error("Error deleting a texture pack:", error.message);
