@@ -21,7 +21,7 @@ const db = new Database(path.join(__dirname, "data", "database.db"), async (erro
                 if (error) {
                     log.warn("Error executing SQL script:", error.message);
                 } else {
-                    log.info("DB: Tables created or already exist.");
+                    log.info("SQLite: Tables created or already exist.");
                 }
             });
         } catch (error) {
@@ -111,15 +111,7 @@ app.post("/api/v1/tws/addTP", async (req, res) => {
         description = await encode.base64encode(description);
         creator = await encode.base64encode(creator);
 
-        // Cleaning up potential SQL injection prompts
-        /*name = name.replace(/[^A-Za-z0-9 ]/g, "");
-        description = description.replace(/[^A-Za-z0-9 ]/g, "");
-        creator = creator.replace(/[^A-Za-z0-9 ]/g, "");
-
-        // Same for logo and download, additionally check if they actually are URLs
-        logo = logo.replace(/[^A-Za-z0-9:\/._\-]/g, "");*/
         if (!validator.isURL(logo, { protocols: ["http", "https"], require_tld: true })) return res.status(400).json({ success: false, cause: "Invalid Logo URL" });
-        /*download = download.replace(/[^A-Za-z0-9:\/._\-]/g, "");*/
         logo = await encode.base64urlencode(logo);
 
         if (!validator.isURL(download, { protocols: ["http", "https"], require_tld: true })) return res.status(400).json({ success: false, cause: "Invalid Download Link" });
