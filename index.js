@@ -72,6 +72,7 @@ app.get("/api/v1/tws/getTPs", async (req, res) => {
                     packDescription: await encode.base64decode(row.description),
                     packCreator: await encode.base64decode(row.creator),
                     packVersion: row.version,
+                    gdVersion: row.gameVersion,
                     packFeature: row.feature
                 }
             })).then(async () => {
