@@ -374,6 +374,15 @@ app.post("/api/v1/tws/updateTP", async (req, res) => {
                             return res.status(500).json({ success: false, cause: "Internal Server Error" });
                         }
 
+                        try {
+                            let logoPath = path.join(__dirname, "data", "logos", `${id}.png`)
+        
+                            await fs.access(logoPath);
+                            await fs.unlink(logoPath);
+                        } catch (error) {
+                            // continue
+                        }
+
                         log.info(`Updated Texture Pack #${id}'s logo`);
                         return res.status(200).json({ success: true, message: "Texture pack's logo updated!" })
                     });
@@ -419,7 +428,6 @@ app.post("/api/v1/tws/deleteTP", async (req, res) => {
                     return res.status(500).json({ success: false, cause: "Internal Server Error" });
                 }
 
-                log.info(`Deleted Texture Pack #${id}`);
                 try {
                     let logoPath = path.join(__dirname, "data", "logos", `${id}.png`)
 
@@ -428,6 +436,8 @@ app.post("/api/v1/tws/deleteTP", async (req, res) => {
                 } catch (error) {
                     // continue
                 }
+
+                log.info(`Deleted Texture Pack #${id}`);
                 return res.status(200).json({ success: true, message: "Texture pack deleted!" });
             });
     } catch (error) {
