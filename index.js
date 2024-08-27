@@ -37,6 +37,10 @@ const PORT = config.port;
 // Set the favicon
 app.use(favicon(path.join(__dirname, "assets", "favicon.ico")));
 
+app.get("/", async (req, res) => {
+    res.redirect("https://geode-sdk.org/mods/uproxide.textures");
+});
+
 app.get("/api/v1/tws/ping", async (req, res) => {
     res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
     res.setHeader("Pragma", "no-cache");
