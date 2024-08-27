@@ -4,8 +4,10 @@ const fs = require("fs").promises;
 const { Database } = require("sqlite3").verbose();
 const bodyParser = require("body-parser");
 const validator = require("validator");
-const path = require("path");
 const favicon = require("serve-favicon");
+const axios = require("axios");
+const sharp = require("sharp");
+const path = require("path");
 
 const { log, encode } = require(path.join(__dirname, "util", "functions.js"));
 const config = require(path.join(__dirname, "config.json"));
@@ -52,6 +54,70 @@ app.get("/api/v1/tws/ping", async (req, res) => {
     res.json({ timestamp: Date.now() });
 });
 
+app.get("/api/v1/tws/getLogo/:logo", async (req, res) => {
+    try {
+        let logo = req.params.logo;
+        if (!logo) return res.status(400).send("Bad Request");
+
+        if (!logo.endsWith(".png")) return res.status(400).send("Logos can only be .png files");
+
+        // Remove .png extension
+        logo = logo.replace(/[^0-9]/g, "");
+
+        const logoCachePath = path.join(__dirname, "data", "logos", `${logo}.png`);
+
+        // If the logo is already stored locally, return it
+        if (await fs.access(logoCachePath).then(() => true).catch(() => false)) {
+            try {
+                res.setHeader("Cache-Control", "public, max-age=3600, immutable"); // Cache for 1 hour
+                res.setHeader("Content-Type", "image/png");
+                return res.send(await fs.readFile(logoCachePath));
+            } catch (error) {
+                log.error("Error reading the cached logo file:", error);
+                return res.status(500).send("Internal Server Error");
+            }
+        }
+    
+        if (!logo) return res.status(400).send("Invalid logo (some characters have been deleted after security check)");
+    
+        // Query the database to check if the logo exists and if so continue the code
+        return db.get("SELECT logo FROM texturepacks WHERE id = ?", [logo], async (error, row) => {
+            if (error) {
+                log.error("Error while trying to check for ID existence in SQLite:", error.message);
+                return res.status(500).send("Internal Server Error");
+            }
+            if (!row) return res.status(404).send("Logo not found");
+    
+            try {
+                const logoResponse = await axios.get(await encode.base64urldecode(row.logo), { responseType: "arraybuffer" });
+                const image = sharp(Buffer.from(logoResponse.data, "binary"));
+                const metadata = await image.metadata();
+
+                // Resize if the logo is not already 336x336 pixels
+                if (metadata.width != 336 || metadata.height != 336) finalLogo = await image.resize(336, 336).toBuffer();
+    
+                // Logo cache
+                try {
+                    if (config.logoCache) await fs.writeFile(logoCachePath, finalLogo);
+                } catch (error) {
+                    log.error("Failed to write logo in cache:", error.message);
+                }
+    
+                // Send the resized image
+                res.setHeader("Cache-Control", "public, max-age=3600, immutable"); // Cache for 1 hour
+                res.setHeader("Content-Type", "image/png");
+                return res.send(finalLogo);
+            } catch (error) {
+                log.error("Error fetching/resizing logo:", error.message);
+                return res.status(500).send("Error processing logo");
+            }
+        });
+    } catch (error) {
+        log.error("Error while trying to get/return logo:", error.message);
+        return res.status(500).send("Internal Server Error");  
+    }
+});
+
 app.get("/api/v1/tws/getTPs", async (req, res) => {
     res.setHeader("Content-Type", "application/json");
 
@@ -68,7 +134,7 @@ app.get("/api/v1/tws/getTPs", async (req, res) => {
                     packID: row.ID,
                     packName: await encode.base64decode(row.name),
                     downloadLink: await encode.base64urldecode(row.download),
-                    packLogo: await encode.base64urldecode(row.logo),
+                    packLogo: `https://textureworkshop.plusgdps.dev/api/v1/tws/getLogo/${row.ID}.png`,
                     packDescription: await encode.base64decode(row.description),
                     packCreator: await encode.base64decode(row.creator),
                     packVersion: row.version,
@@ -354,6 +420,14 @@ app.post("/api/v1/tws/deleteTP", async (req, res) => {
                 }
 
                 log.info(`Deleted Texture Pack #${id}`);
+                try {
+                    let logoPath = path.join(__dirname, "data", "logos", `${id}.png`)
+
+                    await fs.access(logoPath);
+                    await fs.unlink(logoPath);
+                } catch (error) {
+                    // continue
+                }
                 return res.status(200).json({ success: true, message: "Texture pack deleted!" });
             });
     } catch (error) {
