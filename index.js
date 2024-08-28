@@ -90,15 +90,16 @@ app.get("/api/v1/tws/getLogo/:logo", async (req, res) => {
     
             try {
                 const logoResponse = await axios.get(await encode.base64urldecode(row.logo), { responseType: "arraybuffer" });
-                const image = sharp(Buffer.from(logoResponse.data, "binary"));
+                let logoBuffer = Buffer.from(logoResponse.data, "binary")
+                const image = sharp(logoBuffer);
                 const metadata = await image.metadata();
 
                 // Resize if the logo is not already 336x336 pixels
-                if (metadata.width != 336 || metadata.height != 336) finalLogo = await image.resize(336, 336).toBuffer();
+                if (metadata.width != 336 || metadata.height != 336) logoBuffer = await image.resize(336, 336).toBuffer();
     
                 // Logo cache
                 try {
-                    if (config.logoCache) await fs.writeFile(logoCachePath, finalLogo);
+                    if (config.logoCache) await fs.writeFile(logoCachePath, logoBuffer);
                 } catch (error) {
                     log.error("Failed to write logo in cache:", error.message);
                 }
@@ -106,7 +107,7 @@ app.get("/api/v1/tws/getLogo/:logo", async (req, res) => {
                 // Send the resized image
                 res.setHeader("Cache-Control", "public, max-age=3600, immutable"); // Cache for 1 hour
                 res.setHeader("Content-Type", "image/png");
-                return res.send(finalLogo);
+                return res.send(logoBuffer);
             } catch (error) {
                 log.error("Error fetching/resizing logo:", error.message);
                 return res.status(500).send("Error processing logo");
