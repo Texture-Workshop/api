@@ -1,5 +1,11 @@
 {
     "token": "",
     "port": 3300,
+    "apiURL": "https://textureworkshop.plusgdps.dev/api/v1/tws",
+
+    "countDownloads": false,
+    "convertLogo": false,
+
+    "tpCache": false,
     "logoCache": false
 }

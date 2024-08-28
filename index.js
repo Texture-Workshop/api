@@ -12,14 +12,16 @@ const path = require("path");
 const { log, encode } = require(path.join(__dirname, "util", "functions.js"));
 const config = require(path.join(__dirname, "config.json"));
 
+// Define the path where data such as texture packs or logos will be stored
+const dataPath = path.join(__dirname, "data");
 
-const db = new Database(path.join(__dirname, "data", "database.db"), async (error) => {
+const db = new Database(path.join(dataPath, "database.db"), async (error) => {
     if (error) {
         log.error("Error opening SQLite:", error.message);
     } else {
         log.info("Connected to SQLite");
         try {
-            db.exec(await fs.readFile(path.join(__dirname, "data", "database.sql"), "utf8"), async (error) => { // Execute SQL script
+            db.exec(await fs.readFile(path.join(dataPath, "database.sql"), "utf8"), async (error) => { // Execute SQL script
                 if (error) {
                     log.warn("Error executing SQL script:", error.message);
                 } else {
@@ -56,6 +58,8 @@ app.get("/api/v1/tws/ping", async (req, res) => {
 
 app.get("/api/v1/tws/getLogo/:logo", async (req, res) => {
     try {
+        if (!config.convertLogo) return res.status(404).send("Endpoint deactivated");
+
         let logo = req.params.logo;
         if (!logo) return res.status(400).send("Bad Request");
 
@@ -63,22 +67,21 @@ app.get("/api/v1/tws/getLogo/:logo", async (req, res) => {
 
         // Remove .png extension
         logo = logo.replace(/[^0-9]/g, "");
+        if (!logo) return res.status(400).send("Invalid logo (some characters have been deleted after security check)");
 
-        const logoCachePath = path.join(__dirname, "data", "logos", `${logo}.png`);
+        const logoCacheFilePath = path.join(dataPath, "logos", `${logo}.png`);
 
         // If the logo is already stored locally, return it
-        if (await fs.access(logoCachePath).then(() => true).catch(() => false)) {
+        if (await fs.access(logoCacheFilePath).then(() => true).catch(() => false)) {
             try {
                 res.setHeader("Cache-Control", "public, max-age=3600, immutable"); // Cache for 1 hour
                 res.setHeader("Content-Type", "image/png");
-                return res.send(await fs.readFile(logoCachePath));
+                return res.send(await fs.readFile(logoCacheFilePath));
             } catch (error) {
                 log.error("Error reading the cached logo file:", error);
                 return res.status(500).send("Internal Server Error");
             }
         }
-    
-        if (!logo) return res.status(400).send("Invalid logo (some characters have been deleted after security check)");
     
         // Query the database to check if the logo exists and if so continue the code
         return db.get("SELECT logo FROM texturepacks WHERE id = ?", [logo], async (error, row) => {
@@ -89,7 +92,7 @@ app.get("/api/v1/tws/getLogo/:logo", async (req, res) => {
             if (!row) return res.status(404).send("Logo not found");
     
             try {
-                const logoResponse = await axios.get(await encode.base64urldecode(row.logo), { responseType: "arraybuffer" });
+                let logoResponse = await axios.get(await encode.base64urldecode(row.logo), { responseType: "arraybuffer" });
                 let logoBuffer = Buffer.from(logoResponse.data, "binary")
                 const image = sharp(logoBuffer);
                 const metadata = await image.metadata();
@@ -99,7 +102,7 @@ app.get("/api/v1/tws/getLogo/:logo", async (req, res) => {
     
                 // Logo cache
                 try {
-                    if (config.logoCache) await fs.writeFile(logoCachePath, logoBuffer);
+                    if (config.logoCache) await fs.writeFile(logoCacheFilePath, logoBuffer);
                 } catch (error) {
                     log.error("Failed to write logo in cache:", error.message);
                 }
@@ -119,6 +122,74 @@ app.get("/api/v1/tws/getLogo/:logo", async (req, res) => {
     }
 });
 
+app.get("/api/v1/tws/getPack/:pack", async (req, res) => {
+    try {
+        if (!config.countDownloads) return res.status(404).send("Endpoint deactivated");
+
+        let pack = req.params.pack;
+        if (!pack) return res.status(400).send("Bad Request");
+
+        if (!pack.endsWith(".zip")) return res.status(400).send("Texture Packs can only be .zip files");
+
+        // Remove .zip extension
+        pack = pack.replace(/[^0-9]/g, "");
+        if (!pack) return res.status(400).send("Invalid pack (some characters have been deleted after security check)");
+
+        const packCacheFilePath = path.join(dataPath, "packs", `${pack}.zip`);
+
+        // If the logo is already stored locally, return it
+        if (await fs.access(packCacheFilePath).then(() => true).catch(() => false)) {
+            try {
+                res.setHeader("Cache-Control", "public, max-age=3600, immutable"); // Cache for 1 hour
+                res.setHeader("Content-Type", "application/octet-stream");
+                return res.send(await fs.readFile(packCacheFilePath));
+            } catch (error) {
+                log.error("Error reading the cached pack file:", error);
+                return res.status(500).send("Internal Server Error");
+            }
+        }
+    
+        // Query the database to check if the logo exists and if so continue the code
+        return db.get("SELECT download FROM texturepacks WHERE id = ?", [pack], async (error, row) => {
+            if (error) {
+                log.error("Error while trying to check for ID existence in SQLite:", error.message);
+                return res.status(500).send("Internal Server Error");
+            }
+            if (!row) return res.status(404).send("Pack not found");
+    
+            try {
+                let packResponse = await axios.get(await encode.base64urldecode(row.download), { responseType: "arraybuffer" });
+                const packBuffer = Buffer.from(packResponse.data, "binary");
+
+                // Pack cache
+                try {
+                    if (config.tpCache) await fs.writeFile(packCacheFilePath, packBuffer);
+                } catch (error) {
+                    log.error("Failed to write pack in cache:", error.message);
+                }
+
+                // Increment downloads
+                try {
+                    await db.run("UPDATE texturepacks SET downloads = downloads + 1 WHERE id = ?", [pack]);
+                } catch (error) {
+                    log.error("Error updating the \"downloads\" value in SQLite:", error.message);
+                    return res.status(500).send("Internal Server Error");
+                }
+                
+                res.setHeader("Cache-Control", "public, max-age=3600, immutable"); // Cache for 1 hour
+                res.setHeader("Content-Type", "application/octet-stream");
+                return res.send(packBuffer);
+            } catch (error) {
+                log.error("Error fetching pack:", error.message);
+                return res.status(500).send("Error while trying to fetch the pack");
+            }
+        });
+    } catch (error) {
+        log.error("Error while trying to get/return pack:", error.message);
+        return res.status(500).send("Internal Server Error");  
+    }
+});
+
 app.get("/api/v1/tws/getTPs", async (req, res) => {
     res.setHeader("Content-Type", "application/json");
 
@@ -134,8 +205,8 @@ app.get("/api/v1/tws/getTPs", async (req, res) => {
                 result[index + 1] = {
                     packID: row.ID,
                     packName: await encode.base64decode(row.name),
-                    downloadLink: await encode.base64urldecode(row.download),
-                    packLogo: `https://textureworkshop.plusgdps.dev/api/v1/tws/getLogo/${row.ID}.png`,
+                    downloadLink: config.countDownloads ? `${config.apiURL}/getPack/${row.ID}.zip` : await encode.base64urldecode(row.download),
+                    packLogo: config.convertLogo ? `${config.apiURL}/getLogo/${row.ID}.png` : await encode.base64urldecode(row.logo),
                     packDescription: await encode.base64decode(row.description),
                     packCreator: await encode.base64decode(row.creator),
                     packVersion: row.version,
@@ -313,6 +384,16 @@ app.post("/api/v1/tws/updateTP", async (req, res) => {
                             return res.status(500).json({ success: false, cause: "Internal Server Error" });
                         }
 
+                        // Delete cached pack
+                        try {
+                            let packPath = path.join(dataPath, "packs", `${id}.zip`)
+                                
+                            await fs.access(packPath);
+                            await fs.unlink(packPath);
+                        } catch (error) {
+                            // continue
+                        }
+
                         log.info(`Updated Texture Pack #${id} to ${version} (${gameVersion})`);
                         return res.status(200).json({ success: true, message: "Texture pack updated!" })
                     });
@@ -375,8 +456,9 @@ app.post("/api/v1/tws/updateTP", async (req, res) => {
                             return res.status(500).json({ success: false, cause: "Internal Server Error" });
                         }
 
+                        // Delete cached logo
                         try {
-                            let logoPath = path.join(__dirname, "data", "logos", `${id}.png`)
+                            let logoPath = path.join(dataPath, "logos", `${id}.png`)
         
                             await fs.access(logoPath);
                             await fs.unlink(logoPath);
@@ -429,8 +511,19 @@ app.post("/api/v1/tws/deleteTP", async (req, res) => {
                     return res.status(500).json({ success: false, cause: "Internal Server Error" });
                 }
 
+                // Delete cached pack
                 try {
-                    let logoPath = path.join(__dirname, "data", "logos", `${id}.png`)
+                    let packPath = path.join(dataPath, "packs", `${id}.zip`)
+                                                
+                    await fs.access(packPath);
+                    await fs.unlink(packPath);
+                } catch (error) {
+                    // continue
+                }
+
+                // Delete cached logo
+                try {
+                    let logoPath = path.join(dataPath, "logos", `${id}.png`)
 
                     await fs.access(logoPath);
                     await fs.unlink(logoPath);
