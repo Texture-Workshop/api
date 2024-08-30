@@ -81,8 +81,7 @@ app.get("/api/v1/tws/getLogo/:logo", async (req, res) => {
         if (await fs.access(logoCacheFilePath).then(() => true).catch(() => false)) {
             try {
                 res.setHeader("Cache-Control", "public, max-age=3600, immutable"); // Cache for 1 hour
-                res.setHeader("Content-Type", "image/png");
-                return res.send(await fs.readFile(logoCacheFilePath));
+                return res.sendFile(logoCacheFilePath);
             } catch (error) {
                 log.error("Error reading the cached logo file:", error);
                 return res.status(500).send("Internal Server Error");
@@ -147,8 +146,7 @@ app.get("/api/v1/tws/getPack/:pack", async (req, res) => {
         if (await fs.access(packCacheFilePath).then(() => true).catch(() => false)) {
             try {
                 res.setHeader("Cache-Control", "public, max-age=3600, immutable"); // Cache for 1 hour
-                res.setHeader("Content-Type", "application/octet-stream");
-                return res.send(await fs.readFile(packCacheFilePath));
+                return res.sendFile(packCacheFilePath);
             } catch (error) {
                 log.error("Error reading the cached pack file:", error);
                 return res.status(500).send("Internal Server Error");
@@ -236,7 +234,7 @@ app.get("/api/v1/tws/getTPs", async (req, res) => {
 // GET method to send the form
 app.get("/api/v1/tws/addTP", async (req, res) => {
     try {
-        return res.send(await fs.readFile(path.join(__dirname, "pages", "addTP.html"), "utf8"));
+        return res.sendFile(path.join(__dirname, "pages", "addTP.html"));
     } catch (error) {
         log.error("Error sending the addTP.html file:", error.message);
         return res.status(500).send("Internal Server Error")
@@ -304,7 +302,7 @@ app.post("/api/v1/tws/addTP", async (req, res) => {
 
 app.get("/api/v1/tws/featureTP", async (req, res) => {
     try {
-        return res.send(await fs.readFile(path.join(__dirname, "pages", "featureTP.html"), "utf8"));
+        return res.sendFile(path.join(__dirname, "pages", "featureTP.html"));
     } catch (error) {
         log.error("Error sending the featureTP.html file:", error.message);
         return res.status(500).send("Internal Server Error")
@@ -352,7 +350,7 @@ app.post("/api/v1/tws/featureTP", async (req, res) => {
 
 app.get("/api/v1/tws/updateTP", async (req, res) => {
     try {
-        return res.send(await fs.readFile(path.join(__dirname, "pages", "updateTP.html"), "utf8"));
+        return res.sendFile(path.join(__dirname, "pages", "updateTP.html"));
     } catch (error) {
         log.error("Error sending the updateTP.html file:", error.message);
         return res.status(500).send("Internal Server Error")
@@ -488,7 +486,7 @@ app.post("/api/v1/tws/updateTP", async (req, res) => {
 
 app.get("/api/v1/tws/deleteTP", async (req, res) => {
     try {
-        return res.send(await fs.readFile(path.join(__dirname, "pages", "deleteTP.html"), "utf8"));
+        return res.sendFile(path.join(__dirname, "pages", "deleteTP.html"));
     } catch (error) {
         log.error("Error sending the deleteTP.html file:", error.message);
         return res.status(500).send("Internal Server Error")
