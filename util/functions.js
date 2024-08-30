@@ -1,3 +1,5 @@
+const fs = require("fs").promises;
+
 const log = {
     error: async (message, error) => {
         if (!error) return console.error("[ERROR]", message);
@@ -56,7 +58,19 @@ const encode = {
     }
 }
 
+async function deleteFile(filePath) {
+    if (!filePath) return false;
+    try {
+        await fs.access(filePath);
+        await fs.unlink(filePath);
+        return true;
+    } catch (error) {
+        return false;
+    }
+}
+
 module.exports = {
     log,
-    encode
+    encode,
+    deleteFile
 };

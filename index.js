@@ -9,7 +9,7 @@ const axios = require("axios");
 const sharp = require("sharp");
 const path = require("path");
 
-const { log, encode } = require(path.join(__dirname, "util", "functions.js"));
+const { log, encode, deleteFile } = require(path.join(__dirname, "util", "functions.js"));
 const config = require(path.join(__dirname, "config.json"));
 
 // Define the path where data such as texture packs or logos will be stored
@@ -388,18 +388,11 @@ app.post("/api/v1/tws/updateTP", async (req, res) => {
                             return res.status(500).json({ success: false, cause: "Internal Server Error" });
                         }
 
-                        // Delete cached pack
-                        try {
-                            let packPath = path.join(dataPath, "packs", `${id}.zip`)
-                                
-                            await fs.access(packPath);
-                            await fs.unlink(packPath);
-                        } catch (error) {
-                            // continue
-                        }
-
                         log.info(`Updated Texture Pack #${id} to ${version} (${gameVersion})`);
-                        return res.status(200).json({ success: true, message: "Texture pack updated!" })
+                        res.status(200).json({ success: true, message: "Texture pack updated!" })
+
+                        // Delete cached pack
+                        return await deleteFile(path.join(dataPath, "packs", `${id}.zip`));
                     });
                 break;
 
@@ -460,18 +453,11 @@ app.post("/api/v1/tws/updateTP", async (req, res) => {
                             return res.status(500).json({ success: false, cause: "Internal Server Error" });
                         }
 
-                        // Delete cached logo
-                        try {
-                            let logoPath = path.join(dataPath, "logos", `${id}.png`)
-        
-                            await fs.access(logoPath);
-                            await fs.unlink(logoPath);
-                        } catch (error) {
-                            // continue
-                        }
-
                         log.info(`Updated Texture Pack #${id}'s logo`);
-                        return res.status(200).json({ success: true, message: "Texture pack's logo updated!" })
+                        res.status(200).json({ success: true, message: "Texture pack's logo updated!" })
+                        
+                        // Delete cached logo
+                        return await deleteFile(path.join(dataPath, "logos", `${id}.png`));
                     });
                 break;
 
@@ -515,28 +501,13 @@ app.post("/api/v1/tws/deleteTP", async (req, res) => {
                     return res.status(500).json({ success: false, cause: "Internal Server Error" });
                 }
 
-                // Delete cached pack
-                try {
-                    let packPath = path.join(dataPath, "packs", `${id}.zip`)
-                                                
-                    await fs.access(packPath);
-                    await fs.unlink(packPath);
-                } catch (error) {
-                    // continue
-                }
-
-                // Delete cached logo
-                try {
-                    let logoPath = path.join(dataPath, "logos", `${id}.png`)
-
-                    await fs.access(logoPath);
-                    await fs.unlink(logoPath);
-                } catch (error) {
-                    // continue
-                }
-
                 log.info(`Deleted Texture Pack #${id}`);
-                return res.status(200).json({ success: true, message: "Texture pack deleted!" });
+                res.status(200).json({ success: true, message: "Texture pack deleted!" });
+
+                // Delete cached pack
+                await deleteFile(path.join(dataPath, "packs", `${id}.zip`));
+                // Delete cached logo
+                return await deleteFile(path.join(dataPath, "logos", `${id}.png`));
             });
     } catch (error) {
         log.error("Error deleting a texture pack:", error.message);
