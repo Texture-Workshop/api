@@ -46,14 +46,20 @@ app.get("/", async (req, res) => {
 });
 
 app.get("/api/v1/tws/ping", async (req, res) => {
-    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
-    res.setHeader("Pragma", "no-cache");
-    res.setHeader("Expires", "0");
-    res.setHeader("Surrogate-Control", "no-store");
-
-    res.setHeader("Content-Type", "application/json");
-
-    res.json({ timestamp: Date.now() });
+    try {
+        res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+        res.setHeader("Pragma", "no-cache");
+        res.setHeader("Expires", "0");
+        res.setHeader("Surrogate-Control", "no-store");
+    
+        res.setHeader("Content-Type", "application/json");
+    
+        res.json({ timestamp: Date.now() });
+    }
+    catch (error) {
+        log.error("Error while trying to ping (somehow):", error.message);
+        return res.status(500).send("Internal Server Error");
+    }
 });
 
 app.get("/api/v1/tws/getLogo/:logo", async (req, res) => {
