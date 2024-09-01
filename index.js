@@ -199,7 +199,7 @@ app.get("/api/v1/tws/getTPs", async (req, res) => {
 
     let result = {};
     try {
-        db.all("SELECT * FROM texturepacks", async (error, rows) => {
+        db.all("SELECT * FROM texturepacks ORDER BY feature DESC", async (error, rows) => {
             if (error) {
                 log.error("Error fetching data from SQLite:", error.message);
                 return res.status(500).json({ success: false, cause: "Internal Server Error" });
