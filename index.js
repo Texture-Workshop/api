@@ -145,6 +145,14 @@ app.get("/api/v1/tws/getPack/:pack", async (req, res) => {
         // If the logo is already stored locally, return it
         if (await fs.access(packCacheFilePath).then(() => true).catch(() => false)) {
             try {
+                // Increment downloads
+                try {
+                    await db.run("UPDATE texturepacks SET downloads = downloads + 1 WHERE id = ?", [pack]);
+                } catch (error) {
+                    log.error("Error updating the \"downloads\" value in SQLite:", error.message);
+                    return res.status(500).send("Internal Server Error");
+                }
+                
                 res.setHeader("Cache-Control", "public, max-age=3600, immutable"); // Cache for 1 hour
                 return res.sendFile(packCacheFilePath);
             } catch (error) {
