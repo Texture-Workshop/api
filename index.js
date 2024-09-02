@@ -207,7 +207,7 @@ app.get("/api/v1/tws/getTPs", async (req, res) => {
 
     let result = {};
     try {
-        db.all("SELECT * FROM texturepacks ORDER BY feature DESC", async (error, rows) => {
+        db.all("SELECT * FROM texturepacks ORDER BY feature DESC, downloads DESC", async (error, rows) => {
             if (error) {
                 log.error("Error fetching data from SQLite:", error.message);
                 return res.status(500).json({ success: false, cause: "Internal Server Error" });
@@ -223,7 +223,8 @@ app.get("/api/v1/tws/getTPs", async (req, res) => {
                     packCreator: await encode.base64decode(row.creator),
                     packVersion: row.version,
                     gdVersion: row.gameVersion,
-                    packFeature: row.feature
+                    packFeature: row.feature,
+                    packDownloads: row.downloads
                 }
             })).then(async () => {
                 res.setHeader("Cache-Control", "public, max-age=3600, immutable"); // Cache for 1 hour
