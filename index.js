@@ -261,7 +261,7 @@ app.post("/api/v1/tws/addTP", async (req, res) => {
         if (!token || !name || !description || !creator || !logo || !download || !version || !gameVersion || !feature) return res.status(400).json({ success: false, cause: "Bad Request" });
 
         // Do not continue if the token is not valid
-        if (token != config.token) return res.status(403).json({ success: false, cause: "Forbidden" });
+        if (token != config.token) return res.status(401).json({ success: false, cause: "Unauthorized" });
 
         if (!validator.isURL(logo, { protocols: ["http", "https"], require_tld: true })) return res.status(400).json({ success: false, cause: "Invalid Logo URL" });
         if (!validator.isURL(download, { protocols: ["http", "https"], require_tld: true })) return res.status(400).json({ success: false, cause: "Invalid Download Link" });
@@ -326,7 +326,7 @@ app.post("/api/v1/tws/featureTP", async (req, res) => {
         if (!token || !id || !feature) return res.status(400).json({ success: false, cause: "Bad Request" });
 
         // Do not continue if the token is not valid
-        if (token != config.token) return res.status(403).json({ success: false, cause: "Forbidden" });
+        if (token != config.token) return res.status(401).json({ success: false, cause: "Unauthorized" });
 
         id = id.replace(/[^0-9]/g, "");
 
@@ -374,7 +374,7 @@ app.post("/api/v1/tws/updateTP", async (req, res) => {
         if (!token || !type || !id) return res.status(400).json({ success: false, cause: "Bad Request" });
 
         // Do not continue if the token is not valid
-        if (token != config.token) return res.status(403).json({ success: false, cause: "Forbidden" });
+        if (token != config.token) return res.status(401).json({ success: false, cause: "Unauthorized" });
 
         id = id.replace(/[^0-9]/g, "");
 
@@ -496,7 +496,7 @@ app.post("/api/v1/tws/deleteTP", async (req, res) => {
         if (!token || !id) return res.status(400).json({ success: false, cause: "Bad Request" });
 
         // Do not continue if the token is not valid
-        if (token != config.token) return res.status(403).json({ success: false, cause: "Forbidden" });
+        if (token != config.token) return res.status(401).json({ success: false, cause: "Unauthorized" });
 
         id = id.replace(/[^0-9]/g, "");
 
