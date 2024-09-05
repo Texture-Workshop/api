@@ -1,7 +1,7 @@
 const fs = require("fs").promises;
 const bcrypt = require("bcrypt");
 
-// Simplied async functions that are related to console logging.
+// Simplified async functions that are related to console logging.
 const log = {
     // Log an error in the console.
     error: async (message, error) => {
@@ -28,7 +28,7 @@ const log = {
     }
 };
 
-// Simplied async functions that are related to base64.
+// Simplified async functions that are related to base64.
 const encode = {
     // Encode an URL using the base64 format.
     base64encode: async (string) => {
@@ -75,7 +75,7 @@ const encode = {
     }
 }
 
-// Simplied async functions that, for most, use the bcrypt module.
+// Simplified async functions that, for most, use the bcrypt module.
 const encrypt = {
     // Generate a salt and returns it. Returns false if it fails to or one of the values is invalid.
     generateSalt: async (saltRounds) => {
