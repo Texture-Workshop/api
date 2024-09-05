@@ -5,13 +5,12 @@
   "main": "index.js",
   "author": "M336",
   "license": "AGPL-3.0-only",
-
   "scripts": {
     "start": "node index.js"
   },
-
   "dependencies": {
     "axios": "^1.7.6",
+    "bcrypt": "^5.1.1",
     "body-parser": "^1.20.2",
     "express": "^4.19.2",
     "fs": "^0.0.1-security",
