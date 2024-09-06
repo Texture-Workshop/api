@@ -154,9 +154,44 @@ async function deleteFile(filePath) {
     }
 }
 
+// Tries to verify a user; Will check if they exist and will verify if their password is correct.
+async function verifyUser(db, username, password, checkPerm) {
+    if (!db || !username || !password) return false;
+
+    try {
+        username = await encode.base64encode(username);
+
+        const result = await new Promise((resolve, reject) => {
+            db.get("SELECT * FROM accounts WHERE userName = ?", [username], async (error, row) => {
+                if (error) {
+                    log.error("Failed checking for a user's authenticity:", error);
+                    return reject(false);
+                }
+                
+                // Check if user exists
+                if (!row) return reject(false);
+
+                // Check if the password is valid
+                const passwordValid = await encrypt.verifyPassword(password, row.hash);
+                if (!passwordValid) return reject(false);
+
+                // Check permission (if needed)
+                if (checkPerm) if (row[checkPerm.replace(/[^A-Za-z]/g, "")] < 1 && row.permAdmin < 1) return reject(false);
+
+                resolve(true);
+            });
+        });
+
+        return result;
+    } catch (error) {
+        return false;
+    }
+}
+
 module.exports = {
     log,
     encode,
     encrypt,
-    deleteFile
+    deleteFile,
+    verifyUser
 };

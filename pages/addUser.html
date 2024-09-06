@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add user (Admin)</title>
+</head>
+<body>
+    <h1>Add user (Admin)</h1>
+    <form action="/api/v1/tws/addUser" method="POST">
+        <label for="token">Token:</label>
+        <input type="password" id="token" name="token"><br>
+        <p><i>or</i></p>
+        <label for="adminUser">Admin Username:</label>
+        <input type="text" id="adminUser" name="adminUser"><br>
+        <label for="adminPass">Admin Password:</label>
+        <input type="password" id="adminPass" name="adminPass"><br><br>
+
+        <h4>New user</h4>
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" required><br>
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required><br>
+        <h4>Permissions</h4>
+        <label for="permAdmin">Admin:</label>
+        <input type="number" id="permAdmin" name="permAdmin" required><br>
+        <label for="permAddTP">Add TP:</label>
+        <input type="number" id="permAddTP" name="permAddTP" required><br>
+        <label for="permFeatureTP">Feature TP:</label>
+        <input type="number" id="permFeatureTP" name="permFeatureTP" required><br>
+        <label for="permUpdateTP">Update TP:</label>
+        <input type="number" id="permUpdateTP" name="permUpdateTP" required><br>
+        <label for="permDeleteTP">Delete TP:</label>
+        <input type="number" id="permDeleteTP" name="permDeleteTP" required><br>
+
+        <button type="submit">Submit</button>
+    </form>
+</body>
+</html>

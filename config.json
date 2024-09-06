@@ -7,5 +7,7 @@
     "convertLogo": false,
 
     "tpCache": false,
-    "logoCache": false
+    "logoCache": false,
+
+    "bcryptRounds": 12
 }

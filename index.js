@@ -9,7 +9,7 @@ const axios = require("axios");
 const sharp = require("sharp");
 const path = require("path");
 
-const { log, encode, deleteFile } = require(path.join(__dirname, "util", "functions.js"));
+const { log, encode, deleteFile, verifyUser, encrypt  } = require(path.join(__dirname, "util", "functions.js"));
 const config = require(path.join(__dirname, "config.json"));
 
 // Define the path where data such as texture packs or logos will be stored
@@ -23,9 +23,9 @@ const db = new Database(path.join(dataPath, "database.db"), async (error) => {
         try {
             db.exec(await fs.readFile(path.join(dataPath, "database.sql"), "utf8"), async (error) => { // Execute SQL script
                 if (error) {
-                    log.warn("Error executing SQL script:", error.message);
+                    log.error("Error executing SQL script:", error.message);
                 } else {
-                    log.info("SQLite: Tables created or already exist.");
+                    log.info("SQLite tables have been created or already exist");
                 }
             });
         } catch (error) {
@@ -255,13 +255,13 @@ app.use(bodyParser.urlencoded({ extended: false }));
 // POST method to actually handle the form responses
 app.post("/api/v1/tws/addTP", async (req, res) => {
     try {
-        let { token, name, description, creator, logo, download, version, gameVersion, feature } = req.body;
+        let { username, password, name, description, creator, logo, download, version, gameVersion, feature } = req.body;
 
         // Check for missing parameters
-        if (!token || !name || !description || !creator || !logo || !download || !version || !gameVersion || !feature) return res.status(400).json({ success: false, cause: "Bad Request" });
+        if (!username || !password || !name || !description || !creator || !logo || !download || !version || !gameVersion || !feature) return res.status(400).json({ success: false, cause: "Bad Request" });
 
-        // Do not continue if the token is not valid
-        if (token != config.token) return res.status(401).json({ success: false, cause: "Unauthorized" });
+        // Do not continue if the user is not valid
+        if (!await verifyUser(db, username, password, "permAddTP")) return res.status(401).json({ success: false, cause: "Unauthorized" });
 
         if (!validator.isURL(logo, { protocols: ["http", "https"], require_tld: true })) return res.status(400).json({ success: false, cause: "Invalid Logo URL" });
         if (!validator.isURL(download, { protocols: ["http", "https"], require_tld: true })) return res.status(400).json({ success: false, cause: "Invalid Download Link" });
@@ -298,7 +298,7 @@ app.post("/api/v1/tws/addTP", async (req, res) => {
                         resolve(res.status(500).json({ success: false, cause: "Internal Server Error" }));
 
                     }
-                    log.info(`Added Texture Pack "${name}" by ${creator} (Featured: ${feature})`);
+                    log.info(`${username} added Texture Pack "${name}" by ${creator} (Featured: ${feature})`);
                     resolve(res.status(200).json({ success: true, message: "Texture pack added!" }));
                 }
             );
@@ -320,14 +320,13 @@ app.get("/api/v1/tws/featureTP", async (req, res) => {
 
 app.post("/api/v1/tws/featureTP", async (req, res) => {
     try {
-        let { token, id, feature } = req.body;
+        let { username, password, id, feature } = req.body;
 
         // Check for missing parameters
-        if (!token || !id || !feature) return res.status(400).json({ success: false, cause: "Bad Request" });
+        if (!username || !password || !id || !feature) return res.status(400).json({ success: false, cause: "Bad Request" });
 
-        // Do not continue if the token is not valid
-        if (token != config.token) return res.status(401).json({ success: false, cause: "Unauthorized" });
-
+        // Do not continue if the user is not valid
+        if (!await verifyUser(db, username, password, "permFeatureTP")) return res.status(401).json({ success: false, cause: "Unauthorized" });
         id = id.replace(/[^0-9]/g, "");
 
         feature = feature.replace(/[^0-9]/g, "");
@@ -344,10 +343,10 @@ app.post("/api/v1/tws/featureTP", async (req, res) => {
                 }
 
                 if (feature == 0) {
-                    log.info(`Unfeatured Texture Pack #${id}`);
+                    log.info(`${username} unfeatured Texture Pack #${id}`);
                     return res.status(200).json({ success: true, message: "Texture pack unfeatured!" });
                 } else {
-                    log.info(`Featured Texture Pack #${id}`);
+                    log.info(`${username} featured Texture Pack #${id}`);
                     return res.status(200).json({ success: true, message: "Texture pack featured!" });
                 }
             });
@@ -368,13 +367,13 @@ app.get("/api/v1/tws/updateTP", async (req, res) => {
 
 app.post("/api/v1/tws/updateTP", async (req, res) => {
     try {
-        let { token, type, id, name, description, creator, logo, version, gameVersion, download } = req.body;
+        let { username, password, type, id, name, description, creator, logo, version, gameVersion, download } = req.body;
 
         // Check for missing parameters
-        if (!token || !type || !id) return res.status(400).json({ success: false, cause: "Bad Request" });
+        if (!username || !password || !type || !id) return res.status(400).json({ success: false, cause: "Bad Request" });
 
-        // Do not continue if the token is not valid
-        if (token != config.token) return res.status(401).json({ success: false, cause: "Unauthorized" });
+        // Do not continue if the user is not valid
+        if (!await verifyUser(db, username, password, "permUpdateTP")) return res.status(401).json({ success: false, cause: "Unauthorized" });
 
         id = id.replace(/[^0-9]/g, "");
 
@@ -397,7 +396,7 @@ app.post("/api/v1/tws/updateTP", async (req, res) => {
                             return res.status(500).json({ success: false, cause: "Internal Server Error" });
                         }
 
-                        log.info(`Updated Texture Pack #${id} to ${version} (${gameVersion})`);
+                        log.info(`${username} updated Texture Pack #${id} to ${version} (${gameVersion})`);
                         res.status(200).json({ success: true, message: "Texture pack updated!" })
 
                         // Delete cached pack
@@ -415,7 +414,7 @@ app.post("/api/v1/tws/updateTP", async (req, res) => {
                             return res.status(500).json({ success: false, cause: "Internal Server Error" });
                         }
 
-                        log.info(`Updated Texture Pack #${id}'s name to "${name}"`);
+                        log.info(`${username} updated Texture Pack #${id}'s name to "${name}"`);
                         return res.status(200).json({ success: true, message: "Texture pack's name updated!" })
                     });
                 break;
@@ -430,7 +429,7 @@ app.post("/api/v1/tws/updateTP", async (req, res) => {
                             return res.status(500).json({ success: false, cause: "Internal Server Error" });
                         }
 
-                        log.info(`Updated Texture Pack #${id}'s description`);
+                        log.info(`${username} updated Texture Pack #${id}'s description`);
                         return res.status(200).json({ success: true, message: "Texture pack's description updated!" })
                     });
                 break;
@@ -445,7 +444,7 @@ app.post("/api/v1/tws/updateTP", async (req, res) => {
                             return res.status(500).json({ success: false, cause: "Internal Server Error" });
                         }
 
-                        log.info(`Updated Texture Pack #${id}'s creator(s) to "${creator}"`);
+                        log.info(`${username} updated Texture Pack #${id}'s creator(s) to "${creator}"`);
                         return res.status(200).json({ success: true, message: "Texture pack's creator(s) updated!" })
                     });
                 break;
@@ -462,7 +461,7 @@ app.post("/api/v1/tws/updateTP", async (req, res) => {
                             return res.status(500).json({ success: false, cause: "Internal Server Error" });
                         }
 
-                        log.info(`Updated Texture Pack #${id}'s logo`);
+                        log.info(`${username} updated Texture Pack #${id}'s logo`);
                         res.status(200).json({ success: true, message: "Texture pack's logo updated!" })
                         
                         // Delete cached logo
@@ -490,13 +489,13 @@ app.get("/api/v1/tws/deleteTP", async (req, res) => {
 
 app.post("/api/v1/tws/deleteTP", async (req, res) => {
     try {
-        let { token, id } = req.body;
+        let { username, password, id } = req.body;
 
         // Check for missing parameters
-        if (!token || !id) return res.status(400).json({ success: false, cause: "Bad Request" });
+        if (!username || !password || !id) return res.status(400).json({ success: false, cause: "Bad Request" });
 
-        // Do not continue if the token is not valid
-        if (token != config.token) return res.status(401).json({ success: false, cause: "Unauthorized" });
+        // Do not continue if the user is not valid
+        if (!await verifyUser(db, username, password, "permDeleteTP")) return res.status(401).json({ success: false, cause: "Unauthorized" });
 
         id = id.replace(/[^0-9]/g, "");
 
@@ -510,7 +509,7 @@ app.post("/api/v1/tws/deleteTP", async (req, res) => {
                     return res.status(500).json({ success: false, cause: "Internal Server Error" });
                 }
 
-                log.info(`Deleted Texture Pack #${id}`);
+                log.info(`${username} deleted Texture Pack #${id}`);
                 res.status(200).json({ success: true, message: "Texture pack deleted!" });
 
                 // Delete cached pack
@@ -520,6 +519,303 @@ app.post("/api/v1/tws/deleteTP", async (req, res) => {
             });
     } catch (error) {
         log.error("Error deleting a texture pack:", error.message);
+        return res.status(500).send("Internal Server Error")
+    }
+});
+
+
+app.get("/api/v1/tws/getUsers", async (req, res) => {
+    res.setHeader("Content-Type", "application/json");
+
+    let result = {};
+    try {
+        db.all("SELECT * FROM accounts", async (error, rows) => {
+            if (error) {
+                log.error("Error fetching data from SQLite:", error.message);
+                return res.status(500).json({ success: false, cause: "Internal Server Error" });
+            }
+
+            await Promise.all(rows.map(async (row, index) => {
+                result[index + 1] = {
+                    userID: row.ID,
+                    userName: await encode.base64decode(row.userName),
+                    permAdmin: row.permAdmin,
+                    permAddTP: row.permAddTP,
+                    permFeatureTP: row.permFeatureTP,
+                    permUpdateTP: row.permUpdateTP,
+                    permDeleteTP: row.permDeleteTP
+                }
+            })).then(async () => {
+                return res.status(200).json(result);
+            }).catch(async error => {
+                log.error("Error fetching data from SQLite:", error.message);
+                return res.status(500).json({ success: false, cause: "Internal Server Error" });
+            });
+        });
+    } catch (error) {
+        log.error("Error fetching data from SQLite:", error.message);
+        return res.status(500).json({ success: false, cause: "Internal Server Error" });
+    }
+});
+
+app.get("/api/v1/tws/registerUser", async (req, res) => {
+    try {
+        return res.sendFile(path.join(__dirname, "pages", "registerUser.html"));
+    } catch (error) {
+        log.error("Error sending the registerUser.html file:", error.message);
+        return res.status(500).send("Internal Server Error")
+    }
+});
+
+app.post("/api/v1/tws/registerUser", async (req, res) => {
+    try {
+        let { username, password } = req.body;
+
+        username = await encode.base64encode(username);
+
+        // Check if user exists
+        let userExist = await new Promise(async (resolve, reject) => {
+            db.get("SELECT 1 FROM accounts WHERE userName = ?", [username], (error, row) => {
+                if (error) return reject(error);
+                resolve(row);
+            });
+        });
+        if (userExist) return res.status(409).json({ success: false, cause: "This user already exists!" });
+
+        const salt = await encrypt.generateSalt(config.bcryptRounds);
+        const hash = await encrypt.generateHash(password, salt);
+
+        return await new Promise(async (resolve, reject) => {
+            db.run(
+                `INSERT INTO accounts (userName, hash, salt, registerDate) 
+                VALUES (?, ?, ?, ?)`,
+                [username, hash, salt, Math.floor(Date.now() / 1000)], async (error) => {
+                    if (error) {
+                        log.error("Error inserting user into SQLite:", error.message);
+                        reject(res.status(500).json({ success: false, cause: "Internal Server Error" }));
+                    }
+                    log.info(`Registered user "${await encode.base64decode(username)}"`);
+                    resolve(res.status(200).json({ success: true, message: "User registered!" }));
+                }
+            );
+        });
+    } catch (error) {
+        log.error("Error registering new user:", error.message);
+        return res.status(500).send("Internal Server Error")
+    }
+});
+
+/*app.get("/api/v1/tws/addUser", async (req, res) => {
+    try {
+        return res.sendFile(path.join(__dirname, "pages", "addUser.html"));
+    } catch (error) {
+        log.error("Error sending the addUser.html file:", error.message);
+        return res.status(500).send("Internal Server Error")
+    }
+});*/
+
+/*app.post("/api/v1/tws/addUser", async (req, res) => {
+    try {
+        let { token, adminUser, adminPass, username, password, permAdmin, permAddTP, permFeatureTP, permUpdateTP, permDeleteTP } = req.body;
+
+        if (!token && (!adminUser && !adminPass)) return res.status(400).json({ success: false, cause: "Bad Request" });
+        if (token && token != config.token) return res.status(401).json({ success: false, cause: "Unauthorized" });
+        if ((adminUser || adminPass) && !await verifyUser(db, adminUser, adminPass, "permAdmin")) return res.status(401).json({ success: false, cause: "Unauthorized" });
+        
+        // Security Checks
+        const cleanBoolean = (booleanInt) => {
+            booleanInt = booleanInt.replace(/[^0-9]/g, "");
+            return ["0", "1"].includes(booleanInt) ? booleanInt : null;
+        };
+        
+        permAdmin = cleanBoolean(permAdmin);
+        permAddTP = cleanBoolean(permAddTP);
+        permFeatureTP = cleanBoolean(permFeatureTP);
+        permUpdateTP = cleanBoolean(permUpdateTP);
+        permDeleteTP = cleanBoolean(permDeleteTP);
+
+        if (!username || !password || !permAdmin || !permAddTP || !permFeatureTP || !permUpdateTP || !permDeleteTP) return res.status(400).json({ success: false, cause: "Bad Request" });
+        
+        username = await encode.base64encode(username);
+
+        let userExist = await new Promise(async (resolve, reject) => {
+            db.get("SELECT 1 FROM accounts WHERE userName = ?", [username], (error, row) => {
+                if (error) return reject(error);
+                resolve(row);
+            });
+        });
+
+        if (userExist) return res.status(409).json({ success: false, cause: "This user already exists!" });
+
+        const salt = await encrypt.generateSalt(config.bcryptRounds);
+        const hash = await encrypt.generateHash(password, salt);
+
+        return await new Promise(async (resolve, reject) => {
+            db.run(
+                `INSERT INTO accounts (userName, hash, salt, permAdmin, permAddTP, permFeatureTP, permUpdateTP, permDeleteTP, registerDate) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [username, hash, salt, permAdmin, permAddTP, permFeatureTP, permUpdateTP, permDeleteTP, Math.floor(Date.now() / 1000)], async (error) => {
+                    if (error) {
+                        log.error("Error inserting user into SQLite:", error.message);
+                        reject(res.status(500).json({ success: false, cause: "Internal Server Error" }));
+                    }
+                    log.info(`${adminUser ? `${adminUser} added` : "Added"} user "${await encode.base64decode(username)}"`);
+                    resolve(res.status(200).json({ success: true, message: "User added!" }));
+                }
+            );
+        });
+    } catch (error) {
+        log.error("Error registering new user:", error.message);
+        return res.status(500).send("Internal Server Error")
+    }
+});*/
+
+app.get("/api/v1/tws/updateUser", async (req, res) => {
+    try {
+        return res.sendFile(path.join(__dirname, "pages", "updateUser.html"));
+    } catch (error) {
+        log.error("Error sending the updateUser.html file:", error.message);
+        return res.status(500).send("Internal Server Error")
+    }
+});
+
+app.post("/api/v1/tws/updateUser", async (req, res) => {
+    try {
+        let { token, username, adminUser, adminPass, newUsername, newPassword, type, permAdmin, permAddTP, permFeatureTP, permUpdateTP, permDeleteTP } = req.body;
+
+        if (!username || !type) return res.status(400).json({ success: false, cause: "Bad Request" });
+
+        if (!token && (!adminUser && !adminPass)) return res.status(400).json({ success: false, cause: "Bad Request" });
+        if (token && token != config.token) return res.status(401).json({ success: false, cause: "Unauthorized" });
+        if ((adminUser || adminPass) && !await verifyUser(db, adminUser, adminPass, "permAdmin")) return res.status(401).json({ success: false, cause: "Unauthorized" });
+    
+        // Check if user exists
+        let userExistence = await new Promise(async (resolve, reject) => {
+            db.get("SELECT 1 FROM accounts WHERE userName = ?", [await encode.base64encode(username)], (error, row) => {
+                if (error) return reject(error);
+                resolve(row);
+            });
+        });
+        if (!userExistence) return res.status(404).json({ success: false, cause: "Not Found" });
+
+        switch (type) {
+            case "username":
+                if (!newUsername) return res.status(400).json({ success: false, cause: "Bad Request" });
+                
+                newUsername = await encode.base64encode(newUsername);
+                
+                let userExist = await new Promise(async (resolve, reject) => {
+                    db.get("SELECT 1 FROM accounts WHERE userName = ?", [newUsername], (error, row) => {
+                        if (error) return reject(error);
+                        resolve(row);
+                    });
+                });
+                if (userExist) return res.status(409).json({ success: false, cause: "This user already exists!" });
+        
+                db.run(
+                    `UPDATE accounts SET userName = ? WHERE userName = ?`, [newUsername, await encode.base64encode(username)], async (error) => {
+                        if (error) {
+                            log.error("Error updating username:", error.message);
+                            return res.status(500).json({ success: false, cause: "Internal Server Error" });
+                        }
+
+                        log.info(`${adminUser ? `${adminUser} updated` : "Updated"} ${username}'s username ("${await encode.base64decode(newUsername)}")`);
+                        return res.status(200).json({ success: true, message: "Username updated!" })
+                    });
+                break;
+            case "password":
+                if (!newPassword) return res.status(400).json({ success: false, cause: "Bad Request" });
+
+                const salt = await encrypt.generateSalt(config.bcryptRounds);
+                const hash = await encrypt.generateHash(newPassword, salt);
+
+                db.run(
+                    `UPDATE accounts SET hash = ?, salt = ? WHERE userName = ?`, [hash, salt, await encode.base64encode(username)], async (error) => {
+                        if (error) {
+                            log.error("Error updating password:", error.message);
+                            return res.status(500).json({ success: false, cause: "Internal Server Error" });
+                        }
+
+                        log.info(`${adminUser ? `${adminUser} updated` : "Updated"} ${username}'s password`);
+                        return res.status(200).json({ success: true, message: "Password updated!" })
+                    });
+                break;
+            case "permissions":
+                // Security Checks
+                const cleanBoolean = (booleanInt) => {
+                    booleanInt = booleanInt.replace(/[^0-9]/g, "");
+                    return ["0", "1"].includes(booleanInt) ? booleanInt : null;
+                };
+        
+                permAdmin = cleanBoolean(permAdmin);
+                permAddTP = cleanBoolean(permAddTP);
+                permFeatureTP = cleanBoolean(permFeatureTP);
+                permUpdateTP = cleanBoolean(permUpdateTP);
+                permDeleteTP = cleanBoolean(permDeleteTP);
+                if (!permAdmin || !permAddTP || !permFeatureTP || !permUpdateTP || !permDeleteTP) return res.status(400).json({ success: false, cause: "Bad Request" });
+
+                db.run(
+                    `UPDATE accounts SET permAdmin = ?, permAddTP = ?, permFeatureTP = ?, permUpdateTP = ?, permDeleteTP = ? WHERE userName = ?`, [permAdmin, permAddTP, permFeatureTP, permUpdateTP, permDeleteTP, await encode.base64encode(username)], async (error) => {
+                        if (error) {
+                            log.error("Error updating permissions:", error.message);
+                            return res.status(500).json({ success: false, cause: "Internal Server Error" });
+                        }
+
+                        log.info(`${adminUser ? `${adminUser} updated` : "Updated"} ${username}'s permissions`);
+                        return res.status(200).json({ success: true, message: "Permissions updated!" })
+                    });
+                break;
+
+            default:
+                return res.status(400).json({ success: false, cause: "what" });
+            }
+    } catch (error) {
+        log.error("Error updating user:", error.message);
+        return res.status(500).send("Internal Server Error")
+    }
+});
+
+app.get("/api/v1/tws/deleteUser", async (req, res) => {
+    try {
+        return res.sendFile(path.join(__dirname, "pages", "deleteUser.html"));
+    } catch (error) {
+        log.error("Error sending the deleteUser.html file:", error.message);
+        return res.status(500).send("Internal Server Error")
+    }
+});
+
+app.post("/api/v1/tws/deleteUser", async (req, res) => {
+    try {
+        let { token, adminUser, adminPass, username } = req.body;
+
+        if (!username) return res.status(400).json({ success: false, cause: "Bad Request" });
+        username = await encode.base64encode(username)
+
+        if (!token && (!adminUser && !adminPass)) return res.status(400).json({ success: false, cause: "Bad Request" });
+        if (token && token != config.token) return res.status(401).json({ success: false, cause: "Unauthorized" });
+        if ((adminUser || adminPass) && !await verifyUser(db, adminUser, adminPass, "permAdmin")) return res.status(401).json({ success: false, cause: "Unauthorized" });
+
+        let userExist = await new Promise(async (resolve, reject) => {
+            db.get("SELECT 1 FROM accounts WHERE userName = ?", [username], (error, row) => {
+                if (error) return reject(error);
+                resolve(row);
+            });
+        });
+        if (!userExist) return res.status(404).json({ success: false, cause: "Not Found" });
+        
+        db.run(
+            `DELETE FROM accounts WHERE userName = ?`, [username], async (error) => {
+                if (error) {
+                    log.error("Error deleting account:", error.message);
+                    return res.status(500).json({ success: false, cause: "Internal Server Error" });
+                }
+
+                log.info(`${adminUser ? `${adminUser} deleted` : "Deleted"} user "${await encode.base64decode(username)}"`);
+                return res.status(200).json({ success: true, message: "User deleted!" });
+            });
+    
+    } catch (error) {
+        log.error("Error deleting user:", error.message);
         return res.status(500).send("Internal Server Error")
     }
 });
