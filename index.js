@@ -224,7 +224,9 @@ app.get("/api/v1/tws/getTPs", async (req, res) => {
                     packVersion: row.version,
                     gdVersion: row.gameVersion,
                     packFeature: row.feature,
-                    packDownloads: row.downloads
+                    packDownloads: row.downloads,
+                    creationDate: row.creationDate,
+                    lastUpdated: row.lastUpdated
                 }
             })).then(async () => {
                 res.setHeader("Cache-Control", "public, max-age=3600, immutable"); // Cache for 1 hour
@@ -288,11 +290,12 @@ app.post("/api/v1/tws/addTP", async (req, res) => {
             return res.status(409).json({ success: false, cause: "This Texture Pack already exists!" });
         }
 
+        timestamp = Math.floor(Date.now() / 1000);
         return await new Promise(async (resolve, reject) => {
             db.run(
-                `INSERT INTO texturepacks (name, description, creator, logo, download, version, gameVersion, feature) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-                [await encode.base64encode(name), await encode.base64encode(description), await encode.base64encode(creator), await encode.base64urlencode(logo), await encode.base64urlencode(download), version, gameVersion, feature], async (error) => {
+                `INSERT INTO texturepacks (name, description, creator, logo, download, version, gameVersion, feature, creationDate, lastUpdated) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [await encode.base64encode(name), await encode.base64encode(description), await encode.base64encode(creator), await encode.base64urlencode(logo), await encode.base64urlencode(download), version, gameVersion, feature, timestamp, timestamp], async (error) => {
                     if (error) {
                         log.error("Error inserting texture pack into SQLite:", error.message);
                         resolve(res.status(500).json({ success: false, cause: "Internal Server Error" }));
@@ -336,7 +339,7 @@ app.post("/api/v1/tws/featureTP", async (req, res) => {
         if (!id || !feature) return res.status(400).json({ success: false, cause: "Bad Request (One or multiple fields have been cleared after security check)" });
 
         db.run(
-            `UPDATE texturepacks SET feature = ? WHERE ID = ?`, [feature, id], async (error) => {
+            `UPDATE texturepacks SET feature = ?, lastUpdated = ? WHERE ID = ?`, [feature, Math.floor(Date.now() / 1000), id], async (error) => {
                 if (error) {
                     log.error("Error featuring/unfeaturing texture pack:", error.message);
                     return res.status(500).json({ success: false, cause: "Internal Server Error" });
@@ -390,7 +393,7 @@ app.post("/api/v1/tws/updateTP", async (req, res) => {
                 gameVersion = gameVersion.replace(/[^A-Za-z0-9 :\/?.]/g, "");
 
                 db.run(
-                    `UPDATE texturepacks SET download = ?, version = ?, gameVersion = ? WHERE ID = ?`, [await encode.base64urlencode(download), version, gameVersion, id], async (error) => {
+                    `UPDATE texturepacks SET download = ?, version = ?, gameVersion = ?, lastUpdated = ? WHERE ID = ?`, [await encode.base64urlencode(download), version, gameVersion, Math.floor(Date.now() / 1000), id], async (error) => {
                         if (error) {
                             log.error("Error updating texture pack:", error.message);
                             return res.status(500).json({ success: false, cause: "Internal Server Error" });
@@ -408,7 +411,7 @@ app.post("/api/v1/tws/updateTP", async (req, res) => {
                 if (!name) return res.status(400).json({ success: false, cause: "Bad Request" });
 
                 db.run(
-                    `UPDATE texturepacks SET name = ? WHERE ID = ?`, [await encode.base64encode(name), id], async (error) => {
+                    `UPDATE texturepacks SET name = ?, lastUpdated = ? WHERE ID = ?`, [await encode.base64encode(name), Math.floor(Date.now() / 1000), id], async (error) => {
                         if (error) {
                             log.error("Error updating texture pack's name:", error.message);
                             return res.status(500).json({ success: false, cause: "Internal Server Error" });
@@ -423,7 +426,7 @@ app.post("/api/v1/tws/updateTP", async (req, res) => {
                 if (!description) return res.status(400).json({ success: false, cause: "Bad Request" });
 
                 db.run(
-                    `UPDATE texturepacks SET description = ? WHERE ID = ?`, [await encode.base64encode(description), id], async (error) => {
+                    `UPDATE texturepacks SET description = ?, lastUpdated = ? WHERE ID = ?`, [await encode.base64encode(description), Math.floor(Date.now() / 1000), id], async (error) => {
                         if (error) {
                             log.error("Error updating texture pack's description:", error.message);
                             return res.status(500).json({ success: false, cause: "Internal Server Error" });
@@ -438,7 +441,7 @@ app.post("/api/v1/tws/updateTP", async (req, res) => {
                 if (!creator) return res.status(400).json({ success: false, cause: "Bad Request" });
 
                 db.run(
-                    `UPDATE texturepacks SET creator = ? WHERE ID = ?`, [await encode.base64encode(creator), id], async (error) => {
+                    `UPDATE texturepacks SET creator = ?, lastUpdated = ? WHERE ID = ?`, [await encode.base64encode(creator), Math.floor(Date.now() / 1000), id], async (error) => {
                         if (error) {
                             log.error("Error updating texture pack's creator(s):", error.message);
                             return res.status(500).json({ success: false, cause: "Internal Server Error" });
@@ -455,7 +458,7 @@ app.post("/api/v1/tws/updateTP", async (req, res) => {
                 if (!validator.isURL(logo, { protocols: ["http", "https"], require_tld: true })) return res.status(400).json({ success: false, cause: "Invalid Logo URL" });
                 
                 db.run(
-                    `UPDATE texturepacks SET logo = ? WHERE ID = ?`, [await encode.base64urlencode(logo), id], async (error) => {
+                    `UPDATE texturepacks SET logo = ?, lastUpdated = ? WHERE ID = ?`, [await encode.base64urlencode(logo), Math.floor(Date.now() / 1000), id], async (error) => {
                         if (error) {
                             log.error("Error updating texture pack's logo:", error.message);
                             return res.status(500).json({ success: false, cause: "Internal Server Error" });
@@ -543,7 +546,8 @@ app.get("/api/v1/tws/getUsers", async (req, res) => {
                     permAddTP: row.permAddTP,
                     permFeatureTP: row.permFeatureTP,
                     permUpdateTP: row.permUpdateTP,
-                    permDeleteTP: row.permDeleteTP
+                    permDeleteTP: row.permDeleteTP,
+                    registerDate: row.registerDate
                 }
             })).then(async () => {
                 return res.status(200).json(result);
