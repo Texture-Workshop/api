@@ -3,21 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/styles.css">
     <title>Update Texture Pack (Admin)</title>
 </head>
 <body>
     <h1>Update Texture Pack (Admin)</h1>
-    <form action="/api/v1/tws/updateTP" method="POST">
-        <label for="type">Update Type:</label>
-        <select id="type" name="type" onchange="showFields()" required>
-            <option value="version">Version</option>
-            <option value="name">Name</option>
-            <option value="description">Description</option>
-            <option value="creator">Creator</option>
-            <option value="logo">Logo (link)</option>
-        </select>
-        <br><br>
-        
+    <form action="/api/v1/tws/updateTP" method="POST">       
         <!-- Login Field (required for all types) -->
         <div id="login-field">
             <label for="username">Username:</label>
@@ -26,6 +20,16 @@
             <input type="password" id="password" name="password"><br><br>
         </div>
         <br>
+
+        <label for="type">Update Type:</label>
+        <select id="type" name="type" onchange="showFields()" required>
+            <option value="version">Version</option>
+            <option value="name">Name</option>
+            <option value="description">Description</option>
+            <option value="creator">Creator</option>
+            <option value="logo">Logo (link)</option>
+        </select>
+        <br><br><br>
 
         <!-- ID Field (required for all types) -->
         <div id="id-field">

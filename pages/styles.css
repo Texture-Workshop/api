@@ -1,0 +1,55 @@
+html, body {
+    height: 100%;
+    margin: 0;
+    font-family: 'DM Sans', sans-serif;
+}
+
+body {
+    background-image: url("/assets/TWS_Background.png");
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+form {
+    background-color: rgba(255, 255, 255, 0.8);
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    width: 300px;
+}
+
+h1 {
+    text-align: center;
+    color: #ffffff;
+    margin-bottom: 20px;
+}
+
+input[type="text"], input[type="password"], input[type="url"], input[type="number"], textarea {
+        border-radius: 5px;
+        border: 1px solid #ccc;
+        padding: 5px;
+        margin-bottom: 5px;
+        
+        box-sizing: border-box;
+    }
+
+button {
+    border-radius: 5px;
+    background-color: rgb(215, 82, 25);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    font-size: 16px;
+    width: 100%;
+    transition: background-color 0.3s;
+}
+
+button:hover {
+    background-color: rgba(181, 69, 20, 1);
+}

@@ -4,7 +4,6 @@ const fs = require("fs").promises;
 const { Database } = require("sqlite3").verbose();
 const bodyParser = require("body-parser");
 const validator = require("validator");
-const favicon = require("serve-favicon");
 const axios = require("axios");
 const sharp = require("sharp");
 const path = require("path");
@@ -39,10 +38,31 @@ const app = express();
 const PORT = config.port;
 
 // Set the favicon
-app.use(favicon(path.join(__dirname, "assets", "favicon.ico")));
+app.get("/favicon.ico", async (req, res) => {
+    try {
+        return res.sendFile(path.join(__dirname, "assets", "favicon.ico"));
+    } catch (error) {
+        log.error("Error sending the favicon.ico file:", error.message);
+        return res.status(500).send("Internal Server Error")
+    }
+});
 
-app.get("/", async (req, res) => {
-    res.redirect("https://geode-sdk.org/mods/uproxide.textures");
+app.get("/assets/TWS_Background.png", async (req, res) => {
+    try {
+        return res.sendFile(path.join(__dirname, "assets", "TWS_Background.png"));
+    } catch (error) {
+        log.error("Error sending the TWS_Background.png file:", error.message);
+        return res.status(500).send("Internal Server Error")
+    }
+});
+
+app.get("/styles.css", async (req, res) => {
+    try {
+        return res.sendFile(path.join(__dirname, "pages", "styles.css"));
+    } catch (error) {
+        log.error("Error sending the styles.css file:", error.message);
+        return res.status(500).send("Internal Server Error")
+    }
 });
 
 app.get("/api/v1/tws/ping", async (req, res) => {
@@ -822,6 +842,10 @@ app.post("/api/v1/tws/deleteUser", async (req, res) => {
         log.error("Error deleting user:", error.message);
         return res.status(500).send("Internal Server Error")
     }
+});
+
+app.get("/*", async (req, res) => {
+    res.redirect("https://geode-sdk.org/mods/uproxide.textures");
 });
 
 const server = http.createServer(app);
