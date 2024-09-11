@@ -321,6 +321,9 @@ app.post("/api/v1/tws/addTP", async (req, res) => {
         feature = feature.replace(/[^0-9]/g, "");
         if (!["0", "1"].includes(feature)) return res.status(400).json({ success: false, cause: "Invalid Feature boolean (must be either 0 (false) or 1 (true))" });
 
+        // Make sure the user has the permission to feature a TP, otherwise default to 0
+        feature = await verifyUser(db, username, password, "permFeatureTP") ? feature : 0;
+
         // Check if all fields are here again
         if (!name || !description || !creator || !logo || !download || !version || !gameVersion || !feature) return res.status(400).json({ success: false, cause: "Bad Request (One or multiple fields have been cleared after security check)" });
 
