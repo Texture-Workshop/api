@@ -3,6 +3,8 @@
     "port": 3300,
     "apiURL": "https://textureworkshop.plusgdps.dev/api/v1/tws",
 
+    "logRequests": true,
+
     "countDownloads": false,
     "convertLogo": false,
 
