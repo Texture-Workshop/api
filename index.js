@@ -11,6 +11,8 @@ const path = require("path");
 const { log, encode, deleteFile, verifyUser, encrypt  } = require(path.join(__dirname, "util", "functions.js"));
 const config = require(path.join(__dirname, "config.json"));
 
+const { version } = require(path.join(__dirname, "package.json"));
+
 // Define the path where data such as texture packs or logos will be stored
 const dataPath = path.join(__dirname, "data");
 
@@ -117,7 +119,7 @@ app.get("/api/v1/tws/getLogo/:logo", async (req, res) => {
             if (!row) return res.status(404).send("Logo not found");
     
             try {
-                let logoResponse = await axios.get(await encode.base64urldecode(row.logo), { responseType: "arraybuffer" });
+                let logoResponse = await axios.get(await encode.base64urldecode(row.logo), { responseType: "arraybuffer" }, { headers: { "User-Agent": `TextureWorkshopAPI/${version}` }});
                 let logoBuffer = Buffer.from(logoResponse.data, "binary")
                 const image = sharp(logoBuffer);
                 const metadata = await image.metadata();
@@ -190,7 +192,7 @@ app.get("/api/v1/tws/getPack/:pack", async (req, res) => {
             if (!row) return res.status(404).send("Pack not found");
     
             try {
-                let packResponse = await axios.get(await encode.base64urldecode(row.download), { responseType: "arraybuffer" });
+                let packResponse = await axios.get(await encode.base64urldecode(row.download), { responseType: "arraybuffer" }, { headers: { "User-Agent": `TextureWorkshopAPI/${version}` }});
                 const packBuffer = Buffer.from(packResponse.data, "binary");
 
                 // Pack cache
