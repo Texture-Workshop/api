@@ -25,6 +25,12 @@ const log = {
     debug: async (message, debug) => {
         if (!debug) return console.debug("[DEBUG]", message);
         else return console.debug("[DEBUG]", message, debug);
+    },
+    
+    // Log a request in the console.
+    request: async (request) => {
+        if (!request) return;
+        return console.log("[REQUEST]", request);
     }
 };
 

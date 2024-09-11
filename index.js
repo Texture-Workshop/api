@@ -39,6 +39,22 @@ const app = express();
 
 const PORT = config.port;
 
+// Log requests
+app.use((req, res, next) => {
+    try {
+        req.time = new Date(Date.now()).toString();
+
+        res.on('finish', () => {
+            log.request(`(${req.time}) "${req.method} ${req.path} HTTP/${req.httpVersion}" (host: "${req.hostname}", requester: "${req.headers['x-forwarded-for'] || req.socket.remoteAddress}", code: ${res.statusCode}, user-agent: "${req.headers["user-agent"]}")`);
+        });
+    
+        next();
+    } catch(error) {
+        log.error("Failed to log request:", error);
+        return next();
+    }
+});
+
 // Set the favicon
 app.get("/favicon.ico", async (req, res) => {
     try {
