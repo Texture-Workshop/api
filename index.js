@@ -119,7 +119,11 @@ app.get("/api/v1/tws/getLogo/:logo", async (req, res) => {
             if (!row) return res.status(404).send("Logo not found");
     
             try {
-                let logoResponse = await axios.get(await encode.base64urldecode(row.logo), { responseType: "arraybuffer" }, { headers: { "User-Agent": `TextureWorkshopAPI/${version}` }});
+                let logoResponse = await axios.get(await encode.base64urldecode(row.logo), { responseType: "arraybuffer",
+                    headers: {
+                      "User-Agent": `TextureWorkshopAPI/${version}`
+                    }
+                });
                 let logoBuffer = Buffer.from(logoResponse.data, "binary")
                 const image = sharp(logoBuffer);
                 const metadata = await image.metadata();
@@ -192,7 +196,11 @@ app.get("/api/v1/tws/getPack/:pack", async (req, res) => {
             if (!row) return res.status(404).send("Pack not found");
     
             try {
-                let packResponse = await axios.get(await encode.base64urldecode(row.download), { responseType: "arraybuffer" }, { headers: { "User-Agent": `TextureWorkshopAPI/${version}` }});
+                let packResponse = await axios.get(await encode.base64urldecode(row.download), { responseType: "arraybuffer",
+                    headers: {
+                      "User-Agent": `TextureWorkshopAPI/${version}`
+                    }
+                });
                 const packBuffer = Buffer.from(packResponse.data, "binary");
 
                 // Pack cache
