@@ -49,6 +49,8 @@ const db = new Database(path.join(dataPath, "database.db"), async (error) => {
 
 const app = express();
 
+app.set('trust proxy', process.env.TRUST_PROXY ? process.env.TRUST_PROXY : config.trustProxy); // Number of proxies between user and server
+
 // Log requests
 app.use((req, res, next) => {
     try {

@@ -2,6 +2,7 @@
     "token": "",
     "port": 3300,
     "rateLimit": 150,
+    "trustProxy": 1,
 
     "apiUrl": "https://textureworkshop.plusgdps.dev",
 
