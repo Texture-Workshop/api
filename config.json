@@ -1,7 +1,9 @@
 {
     "token": "",
     "port": 3300,
-    "apiURL": "https://textureworkshop.plusgdps.dev/api/v1/tws",
+    "rateLimit": 150,
+
+    "apiUrl": "https://textureworkshop.plusgdps.dev",
 
     "logRequests": true,
 

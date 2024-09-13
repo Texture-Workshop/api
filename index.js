@@ -1,17 +1,28 @@
+require("dotenv").config();
+
 const express = require("express");
 const http = require("http");
-const fs = require("fs").promises;
-const { Database } = require("sqlite3").verbose();
 const bodyParser = require("body-parser");
 const validator = require("validator");
 const axios = require("axios");
 const sharp = require("sharp");
 const path = require("path");
 
-const { log, encode, deleteFile, verifyUser, encrypt  } = require(path.join(__dirname, "util", "functions.js"));
+const { rateLimit } = require("express-rate-limit");
+
+const { log, encode, deleteFile, verifyUser, encrypt } = require(path.join(__dirname, "util", "functions.js"));
 const config = require(path.join(__dirname, "config.json"));
 
 const { version } = require(path.join(__dirname, "package.json"));
+
+const fs = require("fs").promises;
+const { Database } = require("sqlite3").verbose();
+
+
+const PORT = process.env.PORT ? process.env.PORT : config.port;
+const TOKEN = process.env.TOKEN ? process.env.TOKEN : config.token;
+const RATE_LIMIT = process.env.RATE_LIMIT ? process.env.RATE_LIMIT: config.rateLimit;
+const API_URL = `${process.env.API_URL ? process.env.API_URL : config.apiUrl}/api/v1/tws`;
 
 // Define the path where data such as texture packs or logos will be stored
 const dataPath = path.join(__dirname, "data");
@@ -24,7 +35,8 @@ const db = new Database(path.join(dataPath, "database.db"), async (error) => {
         try {
             db.exec(await fs.readFile(path.join(dataPath, "database.sql"), "utf8"), async (error) => { // Execute SQL script
                 if (error) {
-                    log.error("Error executing SQL script:", error.message);
+                    await log.error("Error executing SQL script:", error.message);
+                    return process.exit(1);
                 } else {
                     log.info("SQLite tables have been created or already exist");
                 }
@@ -36,8 +48,6 @@ const db = new Database(path.join(dataPath, "database.db"), async (error) => {
 });
 
 const app = express();
-
-const PORT = config.port;
 
 // Log requests
 app.use((req, res, next) => {
@@ -55,6 +65,8 @@ app.use((req, res, next) => {
     }
 });
 
+app.use(bodyParser.urlencoded({ extended: false }));
+  
 // Set the favicon
 app.get("/favicon.ico", async (req, res) => {
     try {
@@ -100,6 +112,56 @@ app.get("/api/v1/tws/ping", async (req, res) => {
     }
 });
 
+app.get("/api/v1/tws/getTPs", async (req, res) => {
+    res.setHeader("Content-Type", "application/json");
+
+    let result = {};
+    try {
+        db.all("SELECT * FROM texturepacks ORDER BY feature DESC, downloads DESC", async (error, rows) => {
+            if (error) {
+                log.error("Error fetching data from SQLite:", error.message);
+                return res.status(500).json({ success: false, cause: "Internal Server Error" });
+            }
+
+            await Promise.all(rows.map(async (row, index) => {
+                result[index + 1] = {
+                    packID: row.ID,
+                    packName: await encode.base64decode(row.name),
+                    downloadLink: config.countDownloads ? `${API_URL}/getPack/${row.ID}.zip` : await encode.base64urldecode(row.download),
+                    packLogo: config.convertLogo ? `${API_URL}/getLogo/${row.ID}.png` : await encode.base64urldecode(row.logo),
+                    packDescription: await encode.base64decode(row.description),
+                    packCreator: await encode.base64decode(row.creator),
+                    packVersion: row.version,
+                    gdVersion: row.gameVersion,
+                    packFeature: row.feature,
+                    packDownloads: row.downloads,
+                    creationDate: row.creationDate,
+                    lastUpdated: row.lastUpdated
+                }
+            })).then(async () => {
+                res.setHeader("Cache-Control", "public, max-age=3600, immutable"); // Cache for 1 hour
+                return res.status(200).json(result);
+            }).catch(async error => {
+                log.error("Error fetching data from SQLite:", error.message);
+                return res.status(500).json({ success: false, cause: "Internal Server Error" });
+            });
+        });
+    } catch (error) {
+        log.error("Error fetching data from SQLite:", error.message);
+        return res.status(500).json({ success: false, cause: "Internal Server Error" });
+    }
+});
+
+
+// Rate limiting (only apply it from here)
+app.use(
+    rateLimit({
+    windowMs: 60 * 1000, // 1 minute
+    limit: RATE_LIMIT,
+    message: "Temporarily rate limited, please try again later."
+}));
+
+
 app.get("/api/v1/tws/getLogo/:logo", async (req, res) => {
     try {
         if (!config.convertLogo) return res.status(404).send("Endpoint deactivated");
@@ -122,7 +184,7 @@ app.get("/api/v1/tws/getLogo/:logo", async (req, res) => {
                 return res.sendFile(logoCacheFilePath);
             } catch (error) {
                 log.error("Error reading the cached logo file:", error);
-                return res.status(500).send("Internal Server Error");
+                res.status(500).send("Internal Server Error");
             }
         }
     
@@ -248,46 +310,6 @@ app.get("/api/v1/tws/getPack/:pack", async (req, res) => {
     }
 });
 
-app.get("/api/v1/tws/getTPs", async (req, res) => {
-    res.setHeader("Content-Type", "application/json");
-
-    let result = {};
-    try {
-        db.all("SELECT * FROM texturepacks ORDER BY feature DESC, downloads DESC", async (error, rows) => {
-            if (error) {
-                log.error("Error fetching data from SQLite:", error.message);
-                return res.status(500).json({ success: false, cause: "Internal Server Error" });
-            }
-
-            await Promise.all(rows.map(async (row, index) => {
-                result[index + 1] = {
-                    packID: row.ID,
-                    packName: await encode.base64decode(row.name),
-                    downloadLink: config.countDownloads ? `${config.apiURL}/getPack/${row.ID}.zip` : await encode.base64urldecode(row.download),
-                    packLogo: config.convertLogo ? `${config.apiURL}/getLogo/${row.ID}.png` : await encode.base64urldecode(row.logo),
-                    packDescription: await encode.base64decode(row.description),
-                    packCreator: await encode.base64decode(row.creator),
-                    packVersion: row.version,
-                    gdVersion: row.gameVersion,
-                    packFeature: row.feature,
-                    packDownloads: row.downloads,
-                    creationDate: row.creationDate,
-                    lastUpdated: row.lastUpdated
-                }
-            })).then(async () => {
-                res.setHeader("Cache-Control", "public, max-age=3600, immutable"); // Cache for 1 hour
-                return res.status(200).json(result);
-            }).catch(async error => {
-                log.error("Error fetching data from SQLite:", error.message);
-                return res.status(500).json({ success: false, cause: "Internal Server Error" });
-            });
-        });
-    } catch (error) {
-        log.error("Error fetching data from SQLite:", error.message);
-        return res.status(500).json({ success: false, cause: "Internal Server Error" });
-    }
-});
-
 // GET method to send the form
 app.get("/api/v1/tws/addTP", async (req, res) => {
     try {
@@ -297,8 +319,6 @@ app.get("/api/v1/tws/addTP", async (req, res) => {
         return res.status(500).send("Internal Server Error")
     }
 });
-
-app.use(bodyParser.urlencoded({ extended: false }));
 
 // POST method to actually handle the form responses
 app.post("/api/v1/tws/addTP", async (req, res) => {
@@ -672,7 +692,7 @@ app.post("/api/v1/tws/registerUser", async (req, res) => {
         let { token, adminUser, adminPass, username, password, permAdmin, permAddTP, permFeatureTP, permUpdateTP, permDeleteTP } = req.body;
 
         if (!token && (!adminUser && !adminPass)) return res.status(400).json({ success: false, cause: "Bad Request" });
-        if (token && token != config.token) return res.status(401).json({ success: false, cause: "Unauthorized" });
+        if (token && token != TOKEN) return res.status(401).json({ success: false, cause: "Unauthorized" });
         if ((adminUser || adminPass) && !await verifyUser(db, adminUser, adminPass, "permAdmin")) return res.status(401).json({ success: false, cause: "Unauthorized" });
         
         // Security Checks
@@ -739,7 +759,7 @@ app.post("/api/v1/tws/updateUser", async (req, res) => {
         if (!username || !type) return res.status(400).json({ success: false, cause: "Bad Request" });
 
         if (!token && (!adminUser && !adminPass)) return res.status(400).json({ success: false, cause: "Bad Request" });
-        if (token && token != config.token) return res.status(401).json({ success: false, cause: "Unauthorized" });
+        if (token && token != TOKEN) return res.status(401).json({ success: false, cause: "Unauthorized" });
         if ((adminUser || adminPass) && !await verifyUser(db, adminUser, adminPass, "permAdmin")) return res.status(401).json({ success: false, cause: "Unauthorized" });
     
         // Check if user exists
@@ -845,7 +865,7 @@ app.post("/api/v1/tws/deleteUser", async (req, res) => {
         username = await encode.base64encode(username)
 
         if (!token && (!adminUser && !adminPass)) return res.status(400).json({ success: false, cause: "Bad Request" });
-        if (token && token != config.token) return res.status(401).json({ success: false, cause: "Unauthorized" });
+        if (token && token != TOKEN) return res.status(401).json({ success: false, cause: "Unauthorized" });
         if ((adminUser || adminPass) && !await verifyUser(db, adminUser, adminPass, "permAdmin")) return res.status(401).json({ success: false, cause: "Unauthorized" });
 
         let userExist = await new Promise(async (resolve, reject) => {
