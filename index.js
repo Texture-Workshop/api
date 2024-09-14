@@ -1,7 +1,6 @@
 require("dotenv").config();
 
 const express = require("express");
-const http = require("http");
 const bodyParser = require("body-parser");
 const validator = require("validator");
 const axios = require("axios");
@@ -899,5 +898,4 @@ app.get("/*", async (req, res) => {
     res.redirect("https://geode-sdk.org/mods/uproxide.textures");
 });
 
-const server = http.createServer(app);
-server.listen(PORT, async () => { log.info(`Server is now running on ${PORT}`) });
+app.listen(PORT, async () => { log.info(`Server is now running on ${PORT}`) });
