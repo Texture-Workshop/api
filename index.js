@@ -114,11 +114,29 @@ app.get("/api/v1/tws/ping", async (req, res) => {
 });
 
 app.get("/api/v1/tws/getTPs", async (req, res) => {
+    let { sort } = req.query;
     res.setHeader("Content-Type", "application/json");
 
     let result = {};
+    let queryOrder = "";
+
+    switch (sort) {
+        case "downloads":
+            queryOrder = "ORDER BY downloads DESC";
+            break;
+        case "recent":
+            queryOrder = "ORDER BY lastUpdated DESC";
+            break;
+        case "featured":
+            queryOrder = "WHERE feature >= 1 ORDER BY downloads DESC";
+            break;
+        default:
+            queryOrder = "ORDER BY feature DESC, downloads DESC";
+            break;
+    }
+
     try {
-        db.all("SELECT * FROM texturepacks ORDER BY feature DESC, downloads DESC", async (error, rows) => {
+        db.all(`SELECT * FROM texturepacks ${queryOrder}`, async (error, rows) => {
             if (error) {
                 log.error("Error fetching data from SQLite:", error.message);
                 return res.status(500).json({ success: false, cause: "Internal Server Error" });
