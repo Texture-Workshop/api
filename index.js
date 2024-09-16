@@ -249,25 +249,23 @@ app.get("/api/v1/tws/getPack/:pack", async (req, res) => {
 
         // If the logo is already stored locally, return it
         if (await fs.access(packCacheFilePath).then(() => true).catch(() => false)) {
-            try {
+            try {                
+                res.setHeader("Cache-Control", "public, max-age=3600, immutable"); // Cache for 1 hour
+                res.sendFile(packCacheFilePath);
+                
                 // Increment downloads
                 try {
-                    await db.run("UPDATE texturepacks SET downloads = downloads + 1 WHERE id = ?", [pack]);
+                    return db.run("UPDATE texturepacks SET downloads = downloads + 1 WHERE id = ?", [pack]);
                 } catch (error) {
-                    log.error("Error updating the \"downloads\" value in SQLite:", error.message);
-                    return res.status(500).send("Internal Server Error");
+                    return log.error("Error updating the \"downloads\" value in SQLite:", error.message);
                 }
-                
-                res.setHeader("Cache-Control", "public, max-age=3600, immutable"); // Cache for 1 hour
-                return res.sendFile(packCacheFilePath);
             } catch (error) {
                 log.error("Error reading the cached pack file:", error);
-                return res.status(500).send("Internal Server Error");
             }
         }
     
         // Query the database to check if the logo exists and if so continue the code
-        return db.get("SELECT download FROM texturepacks WHERE id = ?", [pack], async (error, row) => {
+        await db.get("SELECT download FROM texturepacks WHERE id = ?", [pack], async (error, row) => {
             if (error) {
                 log.error("Error while trying to check for ID existence in SQLite:", error.message);
                 return res.status(500).send("Internal Server Error");
@@ -288,23 +286,22 @@ app.get("/api/v1/tws/getPack/:pack", async (req, res) => {
                 } catch (error) {
                     log.error("Failed to write pack in cache:", error.message);
                 }
-
-                // Increment downloads
-                try {
-                    await db.run("UPDATE texturepacks SET downloads = downloads + 1 WHERE id = ?", [pack]);
-                } catch (error) {
-                    log.error("Error updating the \"downloads\" value in SQLite:", error.message);
-                    return res.status(500).send("Internal Server Error");
-                }
                 
                 res.setHeader("Cache-Control", "public, max-age=3600, immutable"); // Cache for 1 hour
                 res.setHeader("Content-Type", "application/octet-stream");
-                return res.send(packBuffer);
+                res.send(packBuffer);
             } catch (error) {
                 log.error("Error fetching pack:", error.message);
                 return res.status(500).send("Error while trying to fetch the pack");
             }
         });
+
+        // Increment downloads
+        try {
+            return db.run("UPDATE texturepacks SET downloads = downloads + 1 WHERE id = ?", [pack]);
+        } catch (error) {
+            return log.error("Error updating the \"downloads\" value in SQLite:", error.message);
+        }
     } catch (error) {
         log.error("Error while trying to get/return pack:", error.message);
         return res.status(500).send("Internal Server Error");  
