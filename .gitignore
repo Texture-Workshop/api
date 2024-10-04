@@ -130,4 +130,8 @@ dist
 .pnp.*
 
 package-lock.json
+data/database.db
+data/packs/*
+data/logos/*
+logs.txt
 .env
