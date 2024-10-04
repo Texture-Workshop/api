@@ -914,3 +914,11 @@ app.get("/*", async (req, res) => {
 });
 
 app.listen(PORT, async () => { log.info(`Server is now running on ${PORT}`) });
+
+process.on("unhandledRejection", (reason, promise) => {
+    log.error(`Unhandled rejection at ${promise}:`, reason);
+});
+
+process.on("uncaughtException", (error) => {
+    log.error(`Uncaught exception:`, error);
+});
