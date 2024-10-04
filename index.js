@@ -48,7 +48,7 @@ const db = new Database(path.join(dataPath, "database.db"), async (error) => {
 
 const app = express();
 
-app.set('trust proxy', process.env.TRUST_PROXY ? process.env.TRUST_PROXY : config.trustProxy); // Number of proxies between user and server
+app.set("trust proxy", process.env.TRUST_PROXY ? process.env.TRUST_PROXY : config.trustProxy); // Number of proxies between user and server
 
 // Log requests
 app.use((req, res, next) => {
@@ -67,34 +67,10 @@ app.use((req, res, next) => {
 });
 
 app.use(bodyParser.urlencoded({ extended: false }));
-  
-// Set the favicon
-app.get("/favicon.ico", async (req, res) => {
-    try {
-        return res.sendFile(path.join(__dirname, "assets", "favicon.ico"));
-    } catch (error) {
-        log.error("Error sending the favicon.ico file:", error.message);
-        return res.status(500).send("Internal Server Error")
-    }
-});
 
-app.get("/assets/TWS_Background.png", async (req, res) => {
-    try {
-        return res.sendFile(path.join(__dirname, "assets", "TWS_Background.png"));
-    } catch (error) {
-        log.error("Error sending the TWS_Background.png file:", error.message);
-        return res.status(500).send("Internal Server Error")
-    }
-});
-
-app.get("/styles.css", async (req, res) => {
-    try {
-        return res.sendFile(path.join(__dirname, "pages", "styles.css"));
-    } catch (error) {
-        log.error("Error sending the styles.css file:", error.message);
-        return res.status(500).send("Internal Server Error")
-    }
-});
+app.use("/favicon.ico", express.static(path.join(__dirname, "app", "assets", "favicon.ico")));
+app.use("/assets", express.static(path.join(__dirname, "app", "assets")));
+app.use("/css", express.static(path.join(__dirname, "app", "css")));
 
 app.get("/api/v1/tws/ping", async (req, res) => {
     try {
@@ -326,15 +302,14 @@ app.get("/api/v1/tws/getPack/:pack", async (req, res) => {
     }
 });
 
-// GET method to send the form
-app.get("/api/v1/tws/addTP", async (req, res) => {
-    try {
-        return res.sendFile(path.join(__dirname, "pages", "addTP.html"));
-    } catch (error) {
-        log.error("Error sending the addTP.html file:", error.message);
-        return res.status(500).send("Internal Server Error")
+app.use("/api/v1/tws", (req, res, next) => {
+    if (!req.path.includes(".html")) {
+        req.url += ".html";
     }
+    next();
 });
+
+app.use("/api/v1/tws", express.static(path.join(__dirname, "app", "html")));
 
 // POST method to actually handle the form responses
 app.post("/api/v1/tws/addTP", async (req, res) => {
@@ -397,15 +372,6 @@ app.post("/api/v1/tws/addTP", async (req, res) => {
     }
 });
 
-app.get("/api/v1/tws/featureTP", async (req, res) => {
-    try {
-        return res.sendFile(path.join(__dirname, "pages", "featureTP.html"));
-    } catch (error) {
-        log.error("Error sending the featureTP.html file:", error.message);
-        return res.status(500).send("Internal Server Error")
-    }
-});
-
 app.post("/api/v1/tws/featureTP", async (req, res) => {
     try {
         let { username, password, id, feature } = req.body;
@@ -440,15 +406,6 @@ app.post("/api/v1/tws/featureTP", async (req, res) => {
             });
     } catch (error) {
         log.error("Error featuring/unfeaturing a texture pack:", error.message);
-        return res.status(500).send("Internal Server Error")
-    }
-});
-
-app.get("/api/v1/tws/updateTP", async (req, res) => {
-    try {
-        return res.sendFile(path.join(__dirname, "pages", "updateTP.html"));
-    } catch (error) {
-        log.error("Error sending the updateTP.html file:", error.message);
         return res.status(500).send("Internal Server Error")
     }
 });
@@ -566,15 +523,6 @@ app.post("/api/v1/tws/updateTP", async (req, res) => {
     }
 });
 
-app.get("/api/v1/tws/deleteTP", async (req, res) => {
-    try {
-        return res.sendFile(path.join(__dirname, "pages", "deleteTP.html"));
-    } catch (error) {
-        log.error("Error sending the deleteTP.html file:", error.message);
-        return res.status(500).send("Internal Server Error")
-    }
-});
-
 app.post("/api/v1/tws/deleteTP", async (req, res) => {
     try {
         let { username, password, id } = req.body;
@@ -644,15 +592,6 @@ app.get("/api/v1/tws/getUsers", async (req, res) => {
     } catch (error) {
         log.error("Error fetching data from SQLite:", error.message);
         return res.status(500).json({ success: false, cause: "Internal Server Error" });
-    }
-});
-
-app.get("/api/v1/tws/registerUser", async (req, res) => {
-    try {
-        return res.sendFile(path.join(__dirname, "pages", "registerUser.html"));
-    } catch (error) {
-        log.error("Error sending the registerUser.html file:", error.message);
-        return res.status(500).send("Internal Server Error")
     }
 });
 
@@ -759,15 +698,6 @@ app.post("/api/v1/tws/registerUser", async (req, res) => {
     }
 });*/
 
-app.get("/api/v1/tws/updateUser", async (req, res) => {
-    try {
-        return res.sendFile(path.join(__dirname, "pages", "updateUser.html"));
-    } catch (error) {
-        log.error("Error sending the updateUser.html file:", error.message);
-        return res.status(500).send("Internal Server Error")
-    }
-});
-
 app.post("/api/v1/tws/updateUser", async (req, res) => {
     try {
         let { token, username, adminUser, adminPass, newUsername, newPassword, type, permAdmin, permAddTP, permFeatureTP, permUpdateTP, permDeleteTP } = req.body;
@@ -864,15 +794,6 @@ app.post("/api/v1/tws/updateUser", async (req, res) => {
     }
 });
 
-app.get("/api/v1/tws/deleteUser", async (req, res) => {
-    try {
-        return res.sendFile(path.join(__dirname, "pages", "deleteUser.html"));
-    } catch (error) {
-        log.error("Error sending the deleteUser.html file:", error.message);
-        return res.status(500).send("Internal Server Error")
-    }
-});
-
 app.post("/api/v1/tws/deleteUser", async (req, res) => {
     try {
         let { token, adminUser, adminPass, username } = req.body;
@@ -909,9 +830,9 @@ app.post("/api/v1/tws/deleteUser", async (req, res) => {
     }
 });
 
-app.get("/*", async (req, res) => {
+/*app.get("/*", async (req, res) => {
     res.redirect("https://geode-sdk.org/mods/uproxide.textures");
-});
+});*/
 
 app.listen(PORT, async () => { log.info(`Server is now running on ${PORT}`) });
 

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/css/tws.css">
+    <title>Update User (Admin)</title>
+</head>
+<body>
+    <h1>Update User (Admin)</h1>
+    <form action="/api/v1/tws/updateUser" method="POST">
+        <label for="type">Update Type:</label>
+        <select id="type" name="type" onchange="showFields()" required>
+            <option value="username">Name</option>
+            <option value="password">Password</option>
+            <option value="permissions">Permissions</option>
+        </select>
+        <br><br>
+        
+        <!-- Login Field (required for all types) -->
+        <div id="login-field">
+            <label for="token">Token:</label>
+            <input type="password" id="token" name="token">
+            <p><i>or</i></p>
+            <label for="adminUser">Admin Username:</label>
+            <input type="text" id="adminUser" name="adminUser"><br>
+            <label for="adminPass">Admin Password:</label>
+            <input type="password" id="adminPass" name="adminPass"><br><br>
+        </div>
+        <br>
+
+        <!-- Username Field (required for all types) -->
+        <div id="username-field">
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" required>
+        </div>
+        <br>
+
+        <!-- New Username Field -->
+        <div id="new-username-field" style="display:none;">
+            <label for="newUsername">New Username:</label>
+            <input type="text" id="newUsername" name="newUsername"><br><br>
+        </div>
+        
+        <!-- New Password Field -->
+        <div id="new-password-field" style="display:none;">
+            <label for="newPassword">New Password:</label>
+            <input type="password" id="newPassword" name="newPassword"><br><br>
+        </div>
+
+        <!-- Permissions Field -->
+        <div id="permissions-field" style="display:none;">
+            <label for="permAdmin">Admin:</label>
+            <input type="number" id="permAdmin" name="permAdmin"><br>
+            <label for="permAddTP">Add TP:</label>
+            <input type="number" id="permAddTP" name="permAddTP"><br>
+            <label for="permFeatureTP">Feature TP:</label>
+            <input type="number" id="permFeatureTP" name="permFeatureTP"><br>
+            <label for="permUpdateTP">Update TP:</label>
+            <input type="number" id="permUpdateTP" name="permUpdateTP"><br>
+            <label for="permDeleteTP">Delete TP:</label>
+            <input type="number" id="permDeleteTP" name="permDeleteTP"><br>
+        </div>
+
+        <button type="submit">Submit</button>
+    </form>
+    <script>
+        // Show fields based on the selected type
+        function showFields() {
+            let type = document.getElementById("type").value;
+            document.getElementById("new-username-field").style.display = (type === "username") ? "block" : "none";
+            document.getElementById("new-password-field").style.display = (type === "password") ? "block" : "none";
+            document.getElementById("permissions-field").style.display = (type === "permissions") ? "block" : "none";
+        }
+
+        // Ensure the correct fields are shown when the page loads
+        document.addEventListener("DOMContentLoaded", showFields);
+    </script>
+</body>
+</html>

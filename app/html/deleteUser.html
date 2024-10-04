@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/css/tws.css">
+    <title>Delete User (Admin)</title>
+</head>
+<body>
+    <h1>Delete User (Admin)</h1>
+    <form action="/api/v1/tws/deleteUser" method="POST">
+        <label for="token">Token:</label>
+        <input type="password" id="token" name="token"><br>
+        <p><i>or</i></p>
+        <label for="adminUser">Admin Username:</label>
+        <input type="text" id="adminUser" name="adminUser"><br>
+        <label for="adminPass">Admin Password:</label>
+        <input type="password" id="adminPass" name="adminPass"><br><br>
+
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" required><br>
+
+        <button type="submit">Submit</button>
+    </form>
+</body>
+</html>
