@@ -303,13 +303,14 @@ app.get("/api/v1/tws/getPack/:pack", async (req, res) => {
 });
 
 app.use("/api/v1/tws", (req, res, next) => {
-    if (!req.path.includes(".html")) {
-        req.url += ".html";
+    if (req.method === "GET") {
+        let filePath = req.path.endsWith(".html") ? req.path : req.path + ".html";
+        
+        express.static(path.join(__dirname, "app", "html"))(Object.assign(req, { url: filePath }), res, next);
+    } else {
+        next();
     }
-    next();
 });
-
-app.use("/api/v1/tws", express.static(path.join(__dirname, "app", "html")));
 
 // POST method to actually handle the form responses
 app.post("/api/v1/tws/addTP", async (req, res) => {
