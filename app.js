@@ -20,7 +20,6 @@ const { Database } = require("sqlite3").verbose();
 
 const PORT = process.env.PORT ? process.env.PORT : config.port;
 const TOKEN = process.env.TOKEN ? process.env.TOKEN : config.token;
-const RATE_LIMIT = process.env.RATE_LIMIT ? process.env.RATE_LIMIT: config.rateLimit;
 const API_URL = `${process.env.API_URL ? process.env.API_URL : config.apiUrl}/api/v1/tws`;
 
 // Define the path where data such as texture packs or logos will be stored
@@ -152,7 +151,7 @@ app.get("/api/v1/tws/getTPs", async (req, res) => {
 app.use(
     rateLimit({
     windowMs: 60 * 1000, // 1 minute
-    limit: RATE_LIMIT,
+    limit: process.env.RATE_LIMIT ? process.env.RATE_LIMIT: config.rateLimit,
     message: "Temporarily rate limited, please try again later."
 }));
 
