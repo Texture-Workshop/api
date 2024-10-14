@@ -8,7 +8,7 @@
 </head>
 <body>
     <h1>Delete Texture Pack (Admin)</h1>
-    <form action="/api/v1/tws/deleteTP" method="POST">
+    <form id="deleteTPForm">
         <label for="username">Username:</label>
         <input type="text" id="username" name="username" required><br>
         <label for="password">Password:</label>
@@ -19,5 +19,48 @@
 
         <button type="submit">Submit</button>
     </form>
+    <script>
+        const form = document.getElementById("deleteTPForm");
+
+        form.addEventListener("submit", function(event) {
+            event.preventDefault();
+
+            const formData = new FormData(form);
+            const body = new URLSearchParams(formData).toString();
+
+            // Use fetch API to submit form data to server
+            fetch("/api/v1/tws/deleteTP", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "Accept": "application/json"
+                },
+                body
+            })
+            .then(response => {
+                const contentType = response.headers.get("content-type");
+                if (contentType && contentType.includes("application/json")) {
+                    return response.json();
+                } else {
+                    return response.text();
+                }
+            })
+            .then(data => {
+                if (typeof data === "object" && data.success !== undefined) {
+                    if (data.success) {
+                        alert(data.message);
+                    } else {
+                        alert("Oops! Looks like something wrong happened...\n" + (data.cause || data.message));
+                    }
+                } else {
+                    alert(data);
+                }
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                alert("An error occurred, please try again.");
+            });
+        });
+    </script>
 </body>
 </html>

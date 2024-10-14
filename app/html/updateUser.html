@@ -8,7 +8,7 @@
 </head>
 <body>
     <h1>Update User (Admin)</h1>
-    <form action="/api/v1/tws/updateUser" method="POST">
+    <form id="updateUserForm">
         <label for="type">Update Type:</label>
         <select id="type" name="type" onchange="showFields()" required>
             <option value="username">Name</option>
@@ -75,6 +75,48 @@
 
         // Ensure the correct fields are shown when the page loads
         document.addEventListener("DOMContentLoaded", showFields);
+        
+        const form = document.getElementById("updateUserForm");
+
+        form.addEventListener("submit", function(event) {
+            event.preventDefault();
+
+            const formData = new FormData(form);
+            const body = new URLSearchParams(formData).toString();
+
+            // Use fetch API to submit form data to server
+            fetch("/api/v1/tws/updateUser", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "Accept": "application/json"
+                },
+                body
+            })
+            .then(response => {
+                const contentType = response.headers.get("content-type");
+                if (contentType && contentType.includes("application/json")) {
+                    return response.json();
+                } else {
+                    return response.text();
+                }
+            })
+            .then(data => {
+                if (typeof data === "object" && data.success !== undefined) {
+                    if (data.success) {
+                        alert(data.message);
+                    } else {
+                        alert("Oops! Looks like something wrong happened...\n" + (data.cause || data.message));
+                    }
+                } else {
+                    alert(data);
+                }
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                alert("An error occurred, please try again.");
+            });
+        });
     </script>
 </body>
 </html>
