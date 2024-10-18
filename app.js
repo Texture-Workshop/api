@@ -765,9 +765,7 @@ app.post("/api/v1/tws/deleteUser", async (req, res) => {
     }
 });
 
-app.get("/*", async (req, res) => {
-    res.redirect("https://geode-sdk.org/mods/uproxide.textures");
-});
+app.get("/*", (req, res) => res.sendFile(path.join(__dirname, "app", "html", "index.html")));
 
 app.listen(PORT, async () => { log.info(`Server is now running on ${PORT}`) });
 

@@ -1,0 +1,133 @@
+/* REMINDER: do pack featured background thingy */
+
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: #f0f0f0;
+    margin: 0;
+    overflow: hidden;
+}
+
+/* Search bar */
+ .search-bar {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    font-size: 16px;
+    box-sizing: border-box;
+}
+
+#packsContainer {
+    width: 80%;
+    max-height: 80vh;
+    padding: 20px;
+    background-color: #fff;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    overflow-y: auto;
+}
+
+.texture-pack-list {
+    display: block;
+}
+
+.texture-pack {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: #f9f9f9;
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    box-sizing: border-box;
+    position: relative;
+}
+
+/* Logo */
+.texture-pack img {
+    width: 120px;
+    height: 120px;
+    object-fit: contain;
+    margin-right: 20px;
+    border-radius: 8px;
+    position: relative;
+    z-index: 2;
+    transition: background-size 0.3s ease;
+}
+
+/* Name & Description */
+.texture-pack .pack-details {
+    flex: 1;
+    text-align: left;
+    max-width: 90%;
+    overflow: hidden;
+    white-space: normal;
+    margin-bottom: 10px;
+    z-index: 2;
+}
+
+.texture-pack .pack-details p {
+    margin: 5px 0;
+    overflow: hidden;
+    white-space: normal;
+}
+
+/* Download button & other infos */
+.texture-pack .pack-meta {
+    text-align: right;
+    min-width: 200px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    z-index: 2;
+}
+
+.texture-pack .pack-meta p {
+    text-align: left;
+    margin: 5px 0;
+}
+
+/* Download link */
+.texture-pack .pack-meta a {
+    display: inline-block;
+    margin-top: 10px;
+    padding: 8px 12px;
+    background-color: #4CAF50;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+    align-self: center;
+}
+
+.texture-pack .pack-meta a:hover {
+    background-color: #45a049;
+}
+
+@media (max-width: 768px) {
+    #packsContainer {
+        width: 100%;
+        padding: 10px;
+    }
+
+    .texture-pack {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .texture-pack img {
+        margin-bottom: 10px;
+        width: 100px;
+        height: 100px;
+    }
+
+    .texture-pack .pack-meta {
+        text-align: left;
+    }
+}

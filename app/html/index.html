@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="An index for Geometry Dash Texture Packs">
+    <meta name="keywords" content="Geometry Dash, Texture Pack, Texture Workshop, Geode, Uproxide">
+    <link rel="stylesheet" href="/css/tws.css">
+    <link rel="stylesheet" href="/css/twsIndex.css">
+    <title>Texture Workshop</title>
+</head>
+<body>
+    <div id="packsContainer">
+        <input type="text" id="searchBar" class="search-bar" placeholder="Search texture packs...">
+
+        <label for="sort">Sort by:</label>
+        <select id="sort">
+            <option value="">Default</option>
+            <option value="downloads">Most Downloads</option>
+            <option value="recent">Recently Updated</option>
+            <option value="featured">Featured</option>
+        </select>
+
+        <div id="texturePackList" class="texture-pack-list">
+            <p>Loading texture packs...</p>
+        </div>
+    </div>
+
+    <script>
+        const texturePackList = document.getElementById("texturePackList");
+        const sortSelect = document.getElementById("sort");
+        const searchBar = document.getElementById("searchBar");
+
+        let allTexturePacks = [];
+
+        // Function to fetch texture packs and handle the response
+        function fetchTexturePacks(sort = "") {
+            texturePackList.innerHTML = "<p>Loading texture packs...</p>";
+
+            fetch(`/api/v1/tws/getTPs?sort=${sort}`)
+                .then(response => response.json())
+                .then(data => {
+                    texturePackList.innerHTML = ""; // Clear "Loading texture packs..."
+
+                    if (data && Array.isArray(data.packs)) {
+                        allTexturePacks = data.packs;
+                        displayTexturePacks(allTexturePacks);
+                    }  else if (data && Array.isArray(data)) {
+                        allTexturePacks = data;
+                        displayTexturePacks(allTexturePacks);
+                    } else if (data && typeof data === "object") {
+                        allTexturePacks = Object.values(data);
+                        displayTexturePacks(allTexturePacks);
+                    } else {
+                        texturePackList.innerHTML = "<p>No texture packs found.</p>";
+                    }
+                })
+                .catch(error => {
+                    console.error("Error:", error);
+                    texturePackList.innerHTML = "<p>Error fetching texture packs. Please try again later.</p>";
+                });
+        }
+
+        // Function to display texture packs
+        function displayTexturePacks(packs) {
+            packs.forEach(pack => {
+                const packElement = document.createElement("div");
+                packElement.classList.add("texture-pack");
+
+                const packImage = document.createElement("img");
+                packImage.src = pack.packLogo;
+                packImage.alt = `${pack.packName} Logo`;
+
+                const packDetails = document.createElement("div");
+                packDetails.classList.add("pack-details");
+                packDetails.innerHTML = `
+                    <h2>${pack.packName} <span style="font-weight:normal">by ${pack.packCreator} (${pack.packID})</span></h2>
+                    <p><em>${pack.packDescription}</em></p>
+                `;
+
+                const packMeta = document.createElement("div");
+                packMeta.classList.add("pack-meta");
+                packMeta.innerHTML = `
+                    <p><strong>TP Version:</strong> ${pack.packVersion}</p>
+                    <p><strong>GD Version:</strong> ${pack.gdVersion}</p>
+                    <p><strong>Downloads:</strong> ${pack.packDownloads}</p>
+                    <a href="${pack.downloadLink}" download>Download</a>
+                `;
+
+                packElement.appendChild(packImage);
+                packElement.appendChild(packDetails);
+                packElement.appendChild(packMeta);
+
+                texturePackList.appendChild(packElement);
+            });
+        }
+
+        searchBar.addEventListener("input", function() {
+            const query = searchBar.value.toLowerCase();
+            const filteredPacks = allTexturePacks.filter(pack => 
+                pack.packName.toLowerCase().includes(query) || 
+                pack.packDescription.toLowerCase().includes(query)
+            );
+            texturePackList.innerHTML = "";
+            displayTexturePacks(filteredPacks);
+        });
+
+        sortSelect.addEventListener("change", function() {
+            fetchTexturePacks(this.value);
+        });
+
+        fetchTexturePacks();
+    </script>
+</body>
+</html>
