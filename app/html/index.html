@@ -10,7 +10,7 @@
     <title>Texture Workshop</title>
 </head>
 <body>
-    <div id="packsContainer">
+    <div id="packsContainer" class="loading">
         <input type="text" id="searchBar" class="search-bar" placeholder="Search texture packs...">
 
         <label for="sort">Sort by:</label>
@@ -20,13 +20,18 @@
             <option value="recent">Recently Updated</option>
             <option value="featured">Featured</option>
         </select>
+        <br>
 
         <div id="texturePackList" class="texture-pack-list">
             <p>Loading texture packs...</p>
         </div>
+		<div id="texturePackLoading" class="texture-pack-list texture-pack-loading">
+            <p>Loading...</p>
+        </div>
     </div>
 
     <script>
+        const packsContainer = document.getElementById("packsContainer");
         const texturePackList = document.getElementById("texturePackList");
         const sortSelect = document.getElementById("sort");
         const searchBar = document.getElementById("searchBar");
@@ -35,7 +40,7 @@
 
         // Function to fetch texture packs and handle the response
         function fetchTexturePacks(sort = "") {
-            texturePackList.innerHTML = "<p>Loading texture packs...</p>";
+            packsContainer.classList.add('loading');
 
             fetch(`/api/v1/tws/getTPs?sort=${sort}`)
                 .then(response => response.json())
@@ -53,11 +58,13 @@
                         displayTexturePacks(allTexturePacks);
                     } else {
                         texturePackList.innerHTML = "<p>No texture packs found.</p>";
+						packsContainer.classList.remove('loading');
                     }
                 })
                 .catch(error => {
                     console.error("Error:", error);
                     texturePackList.innerHTML = "<p>Error fetching texture packs. Please try again later.</p>";
+					packsContainer.classList.remove('loading');
                 });
         }
 
@@ -66,10 +73,18 @@
             packs.forEach(pack => {
                 const packElement = document.createElement("div");
                 packElement.classList.add("texture-pack");
-
+				
+				const packImageDiv = document.createElement("div");
+				packImageDiv.classList.add("texture-pack-logo-div");
+				
                 const packImage = document.createElement("img");
                 packImage.src = pack.packLogo;
                 packImage.alt = `${pack.packName} Logo`;
+				
+                const packFeaturedImage = document.createElement("img");
+                packFeaturedImage.src = '/assets/TWS_Featured.png';
+                packFeaturedImage.alt = `${pack.packName} is featured!`;
+                packFeaturedImage.classList.add('featured');
 
                 const packDetails = document.createElement("div");
                 packDetails.classList.add("pack-details");
@@ -86,16 +101,21 @@
                     <p><strong>Downloads:</strong> ${pack.packDownloads}</p>
                     <a href="${pack.downloadLink}" download>Download</a>
                 `;
-
-                packElement.appendChild(packImage);
+				
+                packImageDiv.appendChild(packImage);
+				if(pack.packFeature) packImageDiv.appendChild(packFeaturedImage);
+                packElement.appendChild(packImageDiv);
                 packElement.appendChild(packDetails);
                 packElement.appendChild(packMeta);
 
                 texturePackList.appendChild(packElement);
+				
             });
+			packsContainer.classList.remove('loading');
         }
 
         searchBar.addEventListener("input", function() {
+			packsContainer.classList.add('loading');
             const query = searchBar.value.toLowerCase();
             const filteredPacks = allTexturePacks.filter(pack => 
                 pack.packName.toLowerCase().includes(query) || 
