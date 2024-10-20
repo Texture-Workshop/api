@@ -109,6 +109,7 @@ body {
     box-sizing: border-box;
     position: relative;
     color: white;
+	grid-gap: 20px;
 }
 
 .texture-pack.darker {
@@ -147,7 +148,6 @@ body {
 /* Download button & other infos */
 .texture-pack .pack-meta {
     text-align: right;
-    min-width: 200px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -212,7 +212,6 @@ body {
 	position: relative;
 	width: 120px;
 	height: 120px;
-	margin-right: 20px;
 }
 
 .texture-pack-logo-div img {
@@ -307,6 +306,7 @@ select {
     top: -10px;
     z-index: 5;
     align-items: center;
+	pointer-events: none;
 }
 
 .logo-div .workshop {
