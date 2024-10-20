@@ -10,31 +10,41 @@
     <title>Texture Workshop</title>
 </head>
 <body>
-    <div id="packsContainer" class="loading">
-        <input type="text" id="searchBar" class="search-bar" placeholder="Search texture packs...">
-
-        <label for="sort">Sort by:</label>
-        <select id="sort">
-            <option value="">Default</option>
-            <option value="downloads">Most Downloads</option>
-            <option value="recent">Recently Updated</option>
-            <option value="featured">Featured</option>
-        </select>
-        <br>
-
-        <div id="texturePackList" class="texture-pack-list">
-            <p>Loading texture packs...</p>
-        </div>
-		<div id="texturePackLoading" class="texture-pack-list texture-pack-loading">
-            <p>Loading...</p>
-        </div>
-    </div>
+	<span class="background"></span>
+	<div class="position-box">
+		<div class="logo-div">
+			<img class="logo" src="/assets/TWS_Logo.png"></img>
+			<img class="workshop" src="/assets/TWS_Workshop.png"></img>
+		</div>
+		<span class="container-border"></span>
+		<div id="packsContainer" class="loading">
+			<div class="search-bar-div">
+				<input type="text" id="searchBar" class="search-bar" placeholder="Search">
+				<button onclick="document.getElementById('sort').click();" class="search-bar-button">
+					<img width="30px" src="/assets/filter.svg"></img>
+				</button>
+				<select class="sort" id="sort">
+					<option value="">Default</option>
+					<option value="downloads">Most Downloads</option>
+					<option value="recent">Recently Updated</option>
+					<option value="featured">Featured</option>
+				</select>
+			</div>
+			
+			<div id="texturePackList" class="texture-pack-list"></div>
+			
+			<div id="texturePackLoading" class="texture-pack-loading">
+					<p>Loading...</p>
+			</div>
+		</div>
+	</div>
 
     <script>
         const packsContainer = document.getElementById("packsContainer");
         const texturePackList = document.getElementById("texturePackList");
         const sortSelect = document.getElementById("sort");
         const searchBar = document.getElementById("searchBar");
+		var x = 0;
 
         let allTexturePacks = [];
 
@@ -70,9 +80,11 @@
 
         // Function to display texture packs
         function displayTexturePacks(packs) {
+			x = 0;
             packs.forEach(pack => {
                 const packElement = document.createElement("div");
                 packElement.classList.add("texture-pack");
+				if(!(x % 2)) packElement.classList.add("darker");
 				
 				const packImageDiv = document.createElement("div");
 				packImageDiv.classList.add("texture-pack-logo-div");
@@ -89,16 +101,16 @@
                 const packDetails = document.createElement("div");
                 packDetails.classList.add("pack-details");
                 packDetails.innerHTML = `
-                    <h2>${pack.packName} <span style="font-weight:normal">by ${pack.packCreator} (${pack.packID})</span></h2>
+                    <h2>${pack.packName} (${pack.packID})<span>by ${pack.packCreator}</span></h2>
                     <p><em>${pack.packDescription}</em></p>
                 `;
 
                 const packMeta = document.createElement("div");
                 packMeta.classList.add("pack-meta");
                 packMeta.innerHTML = `
-                    <p><strong>TP Version:</strong> ${pack.packVersion}</p>
-                    <p><strong>GD Version:</strong> ${pack.gdVersion}</p>
-                    <p><strong>Downloads:</strong> ${pack.packDownloads}</p>
+                    <p>TP Version: ${pack.packVersion}</p>
+                    <p>GD Version: ${pack.gdVersion}</p>
+                    <p>Downloads: ${pack.packDownloads}</p>
                     <a href="${pack.downloadLink}" download>Download</a>
                 `;
 				
@@ -109,7 +121,7 @@
                 packElement.appendChild(packMeta);
 
                 texturePackList.appendChild(packElement);
-				
+				x++;
             });
 			packsContainer.classList.remove('loading');
         }
