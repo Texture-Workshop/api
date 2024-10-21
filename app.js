@@ -7,10 +7,8 @@ const axios = require("axios");
 const sharp = require("sharp");
 const path = require("path");
 
-const { rateLimit } = require("express-rate-limit");
-
 const { log, encode, deleteFile, verifyUser, encrypt } = require(path.join(__dirname, "util", "functions.js"));
-const config = require(path.join(__dirname, "config.json"));
+const { logRequests, countDownloads, convertLogo, tpCache, logoCache, bcryptRounds } = require(path.join(__dirname, "config.json"));
 
 const { version } = require(path.join(__dirname, "package.json"));
 
@@ -18,9 +16,15 @@ const fs = require("fs").promises;
 const { Database } = require("sqlite3").verbose();
 
 
-const PORT = process.env.PORT ? process.env.PORT : config.port;
-const TOKEN = process.env.TOKEN ? process.env.TOKEN : config.token;
-const API_URL = `${process.env.API_URL ? process.env.API_URL : config.apiUrl}/api/v1/tws`;
+const PORT = process.env.PORT ? process.env.PORT : 3300;
+
+const TOKEN = process.env.TOKEN;
+if (!TOKEN) {
+    console.error("Please supply a token in your environment variables.");
+    return process.exit(1);
+}
+
+const API_URL = `${process.env.API_URL ? process.env.API_URL : "http://localhost:3300"}/api/v1/tws`;
 
 // Define the path where data such as texture packs or logos will be stored
 const dataPath = path.join(__dirname, "data");
@@ -47,7 +51,7 @@ const db = new Database(path.join(dataPath, "database.db"), async (error) => {
 
 const app = express();
 
-app.set("trust proxy", process.env.TRUST_PROXY ? process.env.TRUST_PROXY : config.trustProxy); // Number of proxies between user and server
+if (process.env.TRUST_PROXY) app.set("trust proxy", process.env.TRUST_PROXY); // Number of proxies between user and server
 
 // Log requests
 app.use((req, res, next) => {
@@ -55,7 +59,7 @@ app.use((req, res, next) => {
         req.time = new Date(Date.now()).toString();
     
         res.on('finish', () => {
-            log.request(`(${req.time}) "${req.method} ${req.path} HTTP/${req.httpVersion}" (host: "${req.hostname}", requester: "${req.headers['x-forwarded-for'] || req.socket.remoteAddress}", code: ${res.statusCode}, user-agent: "${req.headers["user-agent"]}")`, config.logRequests ? true : false);
+            log.request(`(${req.time}) "${req.method} ${req.path} HTTP/${req.httpVersion}" (host: "${req.hostname}", requester: "${req.headers['x-forwarded-for'] || req.socket.remoteAddress}", code: ${res.statusCode}, user-agent: "${req.headers["user-agent"]}")`, logRequests ? true : false);
         });
         
         next();
@@ -121,8 +125,8 @@ app.get("/api/v1/tws/getTPs", async (req, res) => {
                 result[index + 1] = {
                     packID: row.ID,
                     packName: await encode.base64decode(row.name),
-                    downloadLink: config.countDownloads ? `${API_URL}/getPack/${row.ID}.zip` : await encode.base64urldecode(row.download),
-                    packLogo: config.convertLogo ? `${API_URL}/getLogo/${row.ID}.png` : await encode.base64urldecode(row.logo),
+                    downloadLink: countDownloads ? `${API_URL}/getPack/${row.ID}.zip` : await encode.base64urldecode(row.download),
+                    packLogo: convertLogo ? `${API_URL}/getLogo/${row.ID}.png` : await encode.base64urldecode(row.logo),
                     packDescription: await encode.base64decode(row.description),
                     packCreator: await encode.base64decode(row.creator),
                     packVersion: row.version,
@@ -148,17 +152,18 @@ app.get("/api/v1/tws/getTPs", async (req, res) => {
 
 
 // Rate limiting (only apply it from here)
-app.use(
-    rateLimit({
-    windowMs: 60 * 1000, // 1 minute
-    limit: process.env.RATE_LIMIT ? process.env.RATE_LIMIT: config.rateLimit,
-    message: "Temporarily rate limited, please try again later."
-}));
-
+if (process.env.RATE_LIMIT) {
+    app.use(
+        require("express-rate-limit").rateLimit({
+        windowMs: 60 * 1000, // 1 minute
+        limit: process.env.RATE_LIMIT,
+        message: "Temporarily rate limited, please try again later."
+    }));
+}
 
 app.get("/api/v1/tws/getLogo/:logo", async (req, res) => {
     try {
-        if (!config.convertLogo) return res.status(404).send("Endpoint deactivated");
+        if (!convertLogo) return res.status(404).send("Endpoint deactivated");
 
         let logo = req.params.logo;
         if (!logo) return res.status(400).send("Bad Request");
@@ -205,7 +210,7 @@ app.get("/api/v1/tws/getLogo/:logo", async (req, res) => {
     
                 // Logo cache
                 try {
-                    if (config.logoCache) await fs.writeFile(logoCacheFilePath, logoBuffer);
+                    if (logoCache) await fs.writeFile(logoCacheFilePath, logoBuffer);
                 } catch (error) {
                     log.error("Failed to write logo in cache:", error.message);
                 }
@@ -227,7 +232,7 @@ app.get("/api/v1/tws/getLogo/:logo", async (req, res) => {
 
 app.get("/api/v1/tws/getPack/:pack", async (req, res) => {
     try {
-        if (!config.countDownloads) return res.status(404).send("Endpoint deactivated");
+        if (!countDownloads) return res.status(404).send("Endpoint deactivated");
 
         let pack = req.params.pack;
         if (!pack) return res.status(400).send("Bad Request");
@@ -275,7 +280,7 @@ app.get("/api/v1/tws/getPack/:pack", async (req, res) => {
 
                 // Pack cache
                 try {
-                    if (config.tpCache) await fs.writeFile(packCacheFilePath, packBuffer);
+                    if (tpCache) await fs.writeFile(packCacheFilePath, packBuffer);
                 } catch (error) {
                     log.error("Failed to write pack in cache:", error.message);
                 }
@@ -610,7 +615,7 @@ app.post("/api/v1/tws/registerUser", async (req, res) => {
         });
         if (userExist) return res.status(409).json({ success: false, cause: "This user already exists!" });
 
-        const salt = await encrypt.generateSalt(config.bcryptRounds);
+        const salt = await encrypt.generateSalt(bcryptRounds);
         const hash = await encrypt.generateHash(password, salt);
 
         return await new Promise(async (resolve, reject) => {
@@ -680,7 +685,7 @@ app.post("/api/v1/tws/updateUser", async (req, res) => {
             case "password":
                 if (!newPassword) return res.status(400).json({ success: false, cause: "Bad Request" });
 
-                const salt = await encrypt.generateSalt(config.bcryptRounds);
+                const salt = await encrypt.generateSalt(bcryptRounds);
                 const hash = await encrypt.generateHash(newPassword, salt);
 
                 db.run(
