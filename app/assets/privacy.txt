@@ -1,0 +1,10 @@
+- The Texture Workshop API logs specific details about your requests, including the endpoint you accessed, the HTTP version used, your IP address, the status code of the server's response, and your user-agent.
+- Logged information is retained for up to one week and is automatically cleaned on a weekly basis.
+- The logs may be used to identify malicious IP addresses in the event of an attack or multiple attempts to compromise the security of the Texture Workshop API.
+- When you download a texture pack, its download count will increase. We do not store any personally identifiable information related to your download, apart from the duration for which logs are retained before being cleaned.
+- The API's maintainer (M336) has the ability to access the database if necessary, for purposes such as troubleshooting, fixing bugs, or retrieving non-public information. This access will never be misused or done with malicious intent.
+- The database, where texture pack information such as name, description, download count, and usernames is stored, is kept entirely separate from the logs.
+- You can request the complete removal of your texture pack from the API by contacting an official Texture Workshop Moderator or Administrator.
+- You can request the complete deletion of your Texture Workshop API account by contacting an official Texture Workshop Administrator or its maintainer, M336.
+
+For any questions or concerns regarding this policy, you can reach out to M336 (the API maintainer) on Discord: m336_

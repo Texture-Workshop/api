@@ -1,0 +1,11 @@
+By using the Texture Workshop API, you agree to the following:
+
+- You may not use this API for any illegal activities.
+- You are strictly prohibited from launching any attacks against this API, including but not limited to Distributed Denial of Service (DDoS) attacks. Any such attempts may result in a permanent ban from the API.
+- You are not allowed to impersonate others when creating an account or submitting a texture pack. Claiming ownership of a texture pack that is not yours is strictly prohibited.
+- You may not publish or share content through the API, such as through texture packs, that is intended for or inappropriate for individuals under the age of 18.
+- The API may go offline or be shut down at any time, with or without prior notice.
+- This API is intended for public, non-commercial use. You are welcome to use it in your own projects, but it may not be used for any commercial purposes without explicit permission.
+- The Texture Workshop Moderators, Administrators, or the API maintainer (M336) reserve the right to terminate your account, remove your texture pack, or block your access to the API for any of the reasons listed above, or for other reasons if deemed necessary.
+
+For any questions or concerns regarding those terms, you can reach out to M336 (the API maintainer) on Discord: m336_

@@ -71,9 +71,12 @@ app.use((req, res, next) => {
 
 app.use(bodyParser.urlencoded({ extended: false }));
 
-app.use("/favicon.ico", express.static(path.join(__dirname, "app", "assets", "favicon.ico")));
-app.use("/assets", express.static(path.join(__dirname, "app", "assets")));
-app.use("/css", express.static(path.join(__dirname, "app", "css")));
+app.use("/favicon.ico", express.static(path.join(__dirname, "app", "assets", "favicon.ico"))); // Texture Workshop icon
+app.use("/assets", express.static(path.join(__dirname, "app", "assets"))); // All assets
+app.use("/css", express.static(path.join(__dirname, "app", "css"))); // All CSS stuff
+
+app.use("/privacy", express.static(path.join(__dirname, "app", "assets", "privacy.txt"))); // Privacy policy
+app.use("/terms", express.static(path.join(__dirname, "app", "assets", "terms.txt"))); // Terms of Services
 
 app.get("/api/v1/tws/ping", async (req, res) => {
     try {
@@ -306,15 +309,14 @@ app.get("/api/v1/tws/getPack/:pack", async (req, res) => {
     }
 });
 
-app.use("/api/v1/tws", (req, res, next) => {
-    if (req.method === "GET") {
-        let filePath = req.path.endsWith(".html") ? req.path : req.path + ".html";
-        
-        express.static(path.join(__dirname, "app", "html"))(Object.assign(req, { url: filePath }), res, next);
-    } else {
-        next();
-    }
-});
+// HTML webpages
+app.use("/addTP", express.static(path.join(__dirname, "app", "html", "addTP.html")));
+app.use("/deleteTP", express.static(path.join(__dirname, "app", "html", "deleteTP.html")));
+app.use("/deleteUser", express.static(path.join(__dirname, "app", "html", "deleterUser.html")));
+app.use("/featureTP", express.static(path.join(__dirname, "app", "html", "featureTP.html")));
+app.use("/registerUser", express.static(path.join(__dirname, "app", "html", "registerUser.html")));
+app.use("/updateTP", express.static(path.join(__dirname, "app", "html", "updateTP.html")));
+app.use("/updateUser", express.static(path.join(__dirname, "app", "html", "updateUser.html")));
 
 // POST method to actually handle the form responses
 app.post("/api/v1/tws/addTP", async (req, res) => {
