@@ -2,60 +2,83 @@ const fs = require("fs").promises;
 const path = require("path");
 const bcrypt = require("bcrypt");
 
+// Define log file path
+const logFilePath = path.join(__dirname, "..", "logs.txt");
+
+// Delete logs older than one week
+async function deleteLogs() {
+    try {
+        await fs.access(logFilePath);
+        
+        const stats = await fs.stat(logFilePath);
+        
+        // Check if file is older than one week
+        if (Date.now() - new Date(stats.birthtime).getTime() > (7 * 24 * 60 * 60 * 1000)) {
+            await fs.unlink(logFilePath);
+            log.info("Logs have been cleaned!");
+        }
+    } catch (error) {
+        if (error.code == "ENOENT") {
+            await fs.writeFile(logFilePath, "", "utf8");
+        } else {
+            log.error("Error checking logs file information:", error);
+        }
+    }
+}
+
 // Simplified async functions that are related to console logging.
 const log = {
-    // Log an error in the console.
     error: async (message, error) => {
-        const logMessage = !error ? `[ERROR] ${message}` : `[ERROR] ${message} ${error}`;
+        await deleteLogs();
+        const logMessage = `[ERROR] ${message} ${error || ""}`.trim();
         try {
-            await fs.appendFile(path.join(__dirname, "..", "logs.txt"), `${logMessage}\n`, 'utf8');
-            return console.error(logMessage);
+            await fs.appendFile(logFilePath, `${logMessage}\n`, 'utf8');
+            console.error(logMessage);
         } catch (error) {
             console.error("Failed to write error log:", error);
         }
     },
 
-    // Log a warning in the console.
     warn: async (message, warn) => {
-        const logMessage = !warn ? `[WARN] ${message}` : `[WARN] ${message} ${warn}`;
+        await deleteLogs();
+        const logMessage = `[WARN] ${message} ${warn || ""}`.trim();
         try {
-            await fs.appendFile(path.join(__dirname, "..", "logs.txt"), `${logMessage}\n`, 'utf8');
-            return console.warn(logMessage);
+            await fs.appendFile(logFilePath, `${logMessage}\n`, 'utf8');
+            console.warn(logMessage);
         } catch (error) {
             console.error("Failed to write warn log:", error);
         }
     },
 
-    // Log an info in the console.
     info: async (message, info) => {
-        const logMessage = !info ? `[INFO] ${message}` : `[INFO] ${message} ${info}`;
+        await deleteLogs();
+        const logMessage = `[INFO] ${message} ${info || ""}`.trim();
         try {
-            await fs.appendFile(path.join(__dirname, "..", "logs.txt"), `${logMessage}\n`, 'utf8');
-            return console.info(logMessage);
+            await fs.appendFile(logFilePath, `${logMessage}\n`, 'utf8');
+            console.info(logMessage);
         } catch (error) {
             console.error("Failed to write info log:", error);
         }
     },
 
-    // Log a debug in the console.
     debug: async (message, debug) => {
-        const logMessage = !debug ? `[DEBUG] ${message}` : `[DEBUG] ${message} ${debug}`;
+        await deleteLogs();
+        const logMessage = `[DEBUG] ${message} ${debug || ""}`.trim();
         try {
-            await fs.appendFile(path.join(__dirname, "..", "logs.txt"), `${logMessage}\n`, 'utf8');
-            return console.info(logMessage);
+            await fs.appendFile(logFilePath, `${logMessage}\n`, 'utf8');
+            console.info(logMessage);
         } catch (error) {
             console.error("Failed to write debug log:", error);
         }
     },
 
-    // Log a request in the console.
     request: async (request, logToConsole) => {
+        await deleteLogs();
         if (!request) return;
         const logMessage = `[REQUEST] ${request}`;
         try {
-            await fs.appendFile(path.join(__dirname, "..", "logs.txt"), `${logMessage}\n`, 'utf8');
+            await fs.appendFile(logFilePath, `${logMessage}\n`, 'utf8');
             if (logToConsole) console.log(logMessage);
-            return;
         } catch (error) {
             console.error("Failed to write request log:", error);
         }

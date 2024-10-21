@@ -135,3 +135,4 @@ data/packs/*
 data/logos/*
 logs.txt
 .env
+.DS_Store
