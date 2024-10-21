@@ -312,7 +312,7 @@ app.get("/api/v1/tws/getPack/:pack", async (req, res) => {
 // HTML webpages
 app.use("/mod/addTP", express.static(path.join(__dirname, "app", "html", "addTP.html")));
 app.use("/mod/deleteTP", express.static(path.join(__dirname, "app", "html", "deleteTP.html")));
-app.use("/admin/deleteUser", express.static(path.join(__dirname, "app", "html", "deleterUser.html")));
+app.use("/admin/deleteUser", express.static(path.join(__dirname, "app", "html", "deleteUser.html")));
 app.use("/mod/featureTP", express.static(path.join(__dirname, "app", "html", "featureTP.html")));
 app.use("/registerUser", express.static(path.join(__dirname, "app", "html", "registerUser.html")));
 app.use("/mod/updateTP", express.static(path.join(__dirname, "app", "html", "updateTP.html")));
