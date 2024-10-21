@@ -1,9 +1,17 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap');
+@font-face {
+    font-family: 'Pusab';
+    src: url('/assets/pusab.ttf');
+}
+
+@font-face {
+    font-family: 'Helvetica';
+    src: url('/assets/helvetica.otf');
+}
 
 html, body {
     height: 100%;
     margin: 0;
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'Helvetica', sans-serif;
 }
 
 body {
@@ -85,4 +93,34 @@ button:hover {
 
 ::-webkit-scrollbar-track {
     background-color: rgba(0, 0, 0, 0);
+}
+
+.bg-filler {
+	background-image: linear-gradient(180deg, rgba(246, 224, 0, 1) 50%, rgba(202, 145, 0, 1) 100%);
+}
+
+.bg-filler h1 {
+	font-size: 40px;
+	-webkit-text-stroke: 1.5px black;
+	font-weight: 100;
+	text-shadow: 3px 2.5px #0000005c;
+	margin: 10px;
+}
+
+.bg-filler .description {
+	background: #db8304;
+    margin: 0px 10px;
+    color: white;
+    font-family: 'Helvetica', sans-serif;
+    word-break: break-word;
+    height: calc(100% - 94px);
+    border-radius: 0px;
+    padding: 10px 15px;
+    box-shadow: 0 0 0 5px #000000, 0 0 0 6px #866d00;
+    overflow: scroll;
+}
+
+.bg-filler .description p {
+	margin: 0px;
+	font-size: 20px;
 }

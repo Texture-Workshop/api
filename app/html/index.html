@@ -102,15 +102,15 @@
                 packDetails.classList.add("pack-details");
                 packDetails.innerHTML = `
                     <h2>${pack.packName} (${pack.packID})<span>by ${pack.packCreator}</span></h2>
-                    <p><em>${pack.packDescription}</em></p>
+                    <p>${pack.packDescription}</p>
                 `;
 
                 const packMeta = document.createElement("div");
                 packMeta.classList.add("pack-meta");
                 packMeta.innerHTML = `
-                    <p>TP Version: ${pack.packVersion}</p>
-                    <p>GD Version: ${pack.gdVersion}</p>
-                    <p>Downloads: ${pack.packDownloads}</p>
+                    <p>TP Version: <span>${pack.packVersion}</span></p>
+                    <p>GD Version: <span>${pack.gdVersion}</span></p>
+                    <p>Downloads: <span>${pack.packDownloads}</span></p>
                     <a href="${pack.downloadLink}" download>Download</a>
                 `;
 				

@@ -75,9 +75,6 @@ app.use("/favicon.ico", express.static(path.join(__dirname, "app", "assets", "fa
 app.use("/assets", express.static(path.join(__dirname, "app", "assets"))); // All assets
 app.use("/css", express.static(path.join(__dirname, "app", "css"))); // All CSS stuff
 
-app.use("/privacy", express.static(path.join(__dirname, "app", "assets", "privacy.txt"))); // Privacy policy
-app.use("/terms", express.static(path.join(__dirname, "app", "assets", "terms.txt"))); // Terms of Services
-
 app.get("/api/v1/tws/ping", async (req, res) => {
     try {
         res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
@@ -771,6 +768,8 @@ app.post("/api/v1/tws/deleteUser", async (req, res) => {
         return res.status(500).send("Internal Server Error")
     }
 });
+app.get("/terms", (req, res) => res.sendFile(path.join(__dirname, "app", "html", "terms.html")))
+app.get("/service", (req, res) => res.sendFile(path.join(__dirname, "app", "html", "service.html")))
 
 app.get("/*", (req, res) => res.sendFile(path.join(__dirname, "app", "html", "index.html")));
 
