@@ -769,7 +769,7 @@ app.post("/api/v1/tws/deleteUser", async (req, res) => {
     }
 });
 app.get("/terms", (req, res) => res.sendFile(path.join(__dirname, "app", "html", "terms.html")))
-app.get("/service", (req, res) => res.sendFile(path.join(__dirname, "app", "html", "service.html")))
+app.get("/privacy", (req, res) => res.sendFile(path.join(__dirname, "app", "html", "privacy.html")))
 
 app.get("/*", (req, res) => res.sendFile(path.join(__dirname, "app", "html", "index.html")));
 
