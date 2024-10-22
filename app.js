@@ -650,7 +650,7 @@ app.post("/api/v1/tws/changeUsername", async (req, res) => {
     try {
         let { username, password, newUsername } = req.body;
 
-        if (!username || !password || newUsername) return res.status(400).json({ success: false, cause: "Bad Request" });
+        if (!username || !password || !newUsername) return res.status(400).json({ success: false, cause: "Bad Request" });
 
         if (!await verifyUser(db, username, password)) return res.status(401).json({ success: false, cause: "Invalid password/username" });
 
@@ -684,7 +684,7 @@ app.post("/api/v1/tws/changePassword", async (req, res) => {
     try {
         let { username, password, newPassword } = req.body;
 
-        if (!username || !password || newPassword) return res.status(400).json({ success: false, cause: "Bad Request" });
+        if (!username || !password || !newPassword) return res.status(400).json({ success: false, cause: "Bad Request" });
 
         if (!await verifyUser(db, username, password)) return res.status(401).json({ success: false, cause: "Invalid password/username" });
 
