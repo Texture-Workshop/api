@@ -75,6 +75,9 @@ app.use("/favicon.ico", express.static(path.join(__dirname, "app", "assets", "fa
 app.use("/assets", express.static(path.join(__dirname, "app", "assets"))); // All assets
 app.use("/css", express.static(path.join(__dirname, "app", "css"))); // All CSS stuff
 
+app.get("/terms", (req, res) => res.sendFile(path.join(__dirname, "app", "html", "terms.html"))); // Terms of services
+app.get("/privacy", (req, res) => res.sendFile(path.join(__dirname, "app", "html", "privacy.html"))); // Privacy policy
+
 app.get("/api/v1/tws/ping", async (req, res) => {
     try {
         res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
@@ -306,14 +309,20 @@ app.get("/api/v1/tws/getPack/:pack", async (req, res) => {
     }
 });
 
-// HTML webpages
+/* HTML webpages */
+// Everyone endpoints
+app.use("/registerUser", express.static(path.join(__dirname, "app", "html", "registerUser.html")));
+app.use("/changeUsername", express.static(path.join(__dirname, "app", "html", "changeUsername.html")));
+app.use("/changePassword", express.static(path.join(__dirname, "app", "html", "changePassword.html")));
+// Mod endpoints
 app.use("/mod/addTP", express.static(path.join(__dirname, "app", "html", "addTP.html")));
 app.use("/mod/deleteTP", express.static(path.join(__dirname, "app", "html", "deleteTP.html")));
-app.use("/admin/deleteUser", express.static(path.join(__dirname, "app", "html", "deleteUser.html")));
 app.use("/mod/featureTP", express.static(path.join(__dirname, "app", "html", "featureTP.html")));
-app.use("/registerUser", express.static(path.join(__dirname, "app", "html", "registerUser.html")));
 app.use("/mod/updateTP", express.static(path.join(__dirname, "app", "html", "updateTP.html")));
+// Admin endpoints
+app.use("/admin/deleteUser", express.static(path.join(__dirname, "app", "html", "deleteUser.html")));
 app.use("/admin/updateUser", express.static(path.join(__dirname, "app", "html", "updateUser.html")));
+
 
 // POST method to actually handle the form responses
 app.post("/api/v1/tws/addTP", async (req, res) => {
@@ -637,6 +646,67 @@ app.post("/api/v1/tws/registerUser", async (req, res) => {
     }
 });
 
+app.post("/api/v1/tws/changeUsername", async (req, res) => {
+    try {
+        let { username, password, newUsername } = req.body;
+
+        if (!username || !password || newUsername) return res.status(400).json({ success: false, cause: "Bad Request" });
+
+        if (!await verifyUser(db, username, password)) return res.status(401).json({ success: false, cause: "Invalid password/username" });
+
+        newUsername = await encode.base64encode(newUsername);
+                
+        let userExist = await new Promise(async (resolve, reject) => {
+            db.get("SELECT 1 FROM accounts WHERE userName = ?", [newUsername], (error, row) => {
+                if (error) return reject(error);
+                resolve(row);
+            });
+        });
+        if (userExist) return res.status(409).json({ success: false, cause: "Someone's already using this name!" });
+
+        db.run(
+            `UPDATE accounts SET userName = ? WHERE userName = ?`, [newUsername, await encode.base64encode(username)], async (error) => {
+                if (error) {
+                    log.error("Error updating username:", error.message);
+                    return res.status(500).json({ success: false, cause: "Internal Server Error" });
+                }
+
+                log.info(`${username} updated their username! ("${await encode.base64decode(newUsername)}")`);
+                return res.status(200).json({ success: true, message: "Username updated!" })
+            });
+    } catch (error) {
+        log.error("Error updating user name:", error.message);
+        return res.status(500).send("Internal Server Error")
+    }
+});
+
+app.post("/api/v1/tws/changePassword", async (req, res) => {
+    try {
+        let { username, password, newPassword } = req.body;
+
+        if (!username || !password || newPassword) return res.status(400).json({ success: false, cause: "Bad Request" });
+
+        if (!await verifyUser(db, username, password)) return res.status(401).json({ success: false, cause: "Invalid password/username" });
+
+        const salt = await encrypt.generateSalt(bcryptRounds);
+        const hash = await encrypt.generateHash(newPassword, salt);
+
+        db.run(
+            `UPDATE accounts SET hash = ?, salt = ? WHERE userName = ?`, [hash, salt, await encode.base64encode(username)], async (error) => {
+                if (error) {
+                    log.error("Error updating password:", error.message);
+                    return res.status(500).json({ success: false, cause: "Internal Server Error" });
+                }
+
+                log.info(`${username} updated their password!`);
+                return res.status(200).json({ success: true, message: "Password updated!" })
+            });
+    } catch (error) {
+        log.error("Error updating user password:", error.message);
+        return res.status(500).send("Internal Server Error")
+    }
+});
+
 app.post("/api/v1/tws/updateUser", async (req, res) => {
     try {
         let { token, username, adminUser, adminPass, newUsername, newPassword, type, permAdmin, permAddTP, permFeatureTP, permUpdateTP, permDeleteTP } = req.body;
@@ -768,8 +838,6 @@ app.post("/api/v1/tws/deleteUser", async (req, res) => {
         return res.status(500).send("Internal Server Error")
     }
 });
-app.get("/terms", (req, res) => res.sendFile(path.join(__dirname, "app", "html", "terms.html")))
-app.get("/privacy", (req, res) => res.sendFile(path.join(__dirname, "app", "html", "privacy.html")))
 
 app.get("/*", (req, res) => res.sendFile(path.join(__dirname, "app", "html", "index.html")));
 
