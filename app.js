@@ -71,7 +71,7 @@ app.use((req, res, next) => {
 
 app.use(bodyParser.urlencoded({ extended: false }));
 
-app.use("/favicon.ico", express.static(path.join(__dirname, "app", "assets", "favicon.ico"))); // Texture Workshop icon
+app.get("/favicon.ico", (req, res) => res.sendFile(path.join(__dirname, "app", "assets", "favicon.ico"))); // Texture Workshop icon
 app.use("/assets", express.static(path.join(__dirname, "app", "assets"))); // All assets
 app.use("/css", express.static(path.join(__dirname, "app", "css"))); // All CSS stuff
 
@@ -309,20 +309,21 @@ app.get("/api/v1/tws/getPack/:pack", async (req, res) => {
     }
 });
 
+
 /* HTML webpages */
 // Everyone endpoints
-app.use("/registerUser", express.static(path.join(__dirname, "app", "html", "registerUser.html")));
-app.use("/userDelete", express.static(path.join(__dirname, "app", "html", "userDelete.html")));
-app.use("/changeUsername", express.static(path.join(__dirname, "app", "html", "changeUsername.html")));
-app.use("/changePassword", express.static(path.join(__dirname, "app", "html", "changePassword.html")));
+app.get("/registerUser", (req, res) => res.sendFile(path.join(__dirname, "app", "html", "registerUser.html")));
+app.get("/userDelete", (req, res) => res.sendFile(path.join(__dirname, "app", "html", "userDelete.html")));
+app.get("/changeUsername", (req, res) => res.sendFile(path.join(__dirname, "app", "html", "changeUsername.html")));
+app.get("/changePassword", (req, res) => res.sendFile(path.join(__dirname, "app", "html", "changePassword.html")));
 // Mod endpoints
-app.use("/mod/addTP", express.static(path.join(__dirname, "app", "html", "addTP.html")));
-app.use("/mod/deleteTP", express.static(path.join(__dirname, "app", "html", "deleteTP.html")));
-app.use("/mod/featureTP", express.static(path.join(__dirname, "app", "html", "featureTP.html")));
-app.use("/mod/updateTP", express.static(path.join(__dirname, "app", "html", "updateTP.html")));
+app.get("/mod/addTP", (req, res) => res.sendFile(path.join(__dirname, "app", "html", "addTP.html")));
+app.get("/mod/deleteTP", (req, res) => res.sendFile(path.join(__dirname, "app", "html", "deleteTP.html")));
+app.get("/mod/featureTP", (req, res) => res.sendFile(path.join(__dirname, "app", "html", "featureTP.html")));
+app.get("/mod/updateTP", (req, res) => res.sendFile(path.join(__dirname, "app", "html", "updateTP.html")));
 // Admin endpoints
-app.use("/admin/deleteUser", express.static(path.join(__dirname, "app", "html", "deleteUser.html")));
-app.use("/admin/updateUser", express.static(path.join(__dirname, "app", "html", "updateUser.html")));
+app.get("/admin/deleteUser", (req, res) => res.sendFile(path.join(__dirname, "app", "html", "deleteUser.html")));
+app.get("/admin/updateUser", (req, res) => res.sendFile(path.join(__dirname, "app", "html", "updateUser.html")));
 
 
 // POST method to actually handle the form responses
