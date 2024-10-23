@@ -386,7 +386,7 @@ app.post("/api/v1/tws/addTP", async (req, res) => {
     }
 });
 
-app.post("/api/v1/tws/featureTP", async (req, res) => {
+app.patch("/api/v1/tws/featureTP", async (req, res) => {
     try {
         let { username, password, id, feature } = req.body;
 
@@ -424,7 +424,7 @@ app.post("/api/v1/tws/featureTP", async (req, res) => {
     }
 });
 
-app.post("/api/v1/tws/updateTP", async (req, res) => {
+app.patch("/api/v1/tws/updateTP", async (req, res) => {
     try {
         let { username, password, type, id, name, description, creator, logo, version, gameVersion, download } = req.body;
 
@@ -537,7 +537,7 @@ app.post("/api/v1/tws/updateTP", async (req, res) => {
     }
 });
 
-app.post("/api/v1/tws/deleteTP", async (req, res) => {
+app.delete("/api/v1/tws/deleteTP", async (req, res) => {
     try {
         let { username, password, id } = req.body;
 
@@ -647,7 +647,7 @@ app.post("/api/v1/tws/registerUser", async (req, res) => {
     }
 });
 
-app.post("/api/v1/tws/userDelete", async (req, res) => {
+app.delete("/api/v1/tws/userDelete", async (req, res) => {
     try {
         let { username, password } = req.body;
         if (!username || !password) return res.status(400).json({ success: false, cause: "Bad Request" });
@@ -682,7 +682,7 @@ app.post("/api/v1/tws/userDelete", async (req, res) => {
     }
 });
 
-app.post("/api/v1/tws/changeUsername", async (req, res) => {
+app.patch("/api/v1/tws/changeUsername", async (req, res) => {
     try {
         let { username, password, newUsername } = req.body;
 
@@ -716,7 +716,7 @@ app.post("/api/v1/tws/changeUsername", async (req, res) => {
     }
 });
 
-app.post("/api/v1/tws/changePassword", async (req, res) => {
+app.patch("/api/v1/tws/changePassword", async (req, res) => {
     try {
         let { username, password, newPassword } = req.body;
 
@@ -743,7 +743,7 @@ app.post("/api/v1/tws/changePassword", async (req, res) => {
     }
 });
 
-app.post("/api/v1/tws/updateUser", async (req, res) => {
+app.patch("/api/v1/tws/updateUser", async (req, res) => {
     try {
         let { token, username, adminUser, adminPass, newUsername, newPassword, type, permAdmin, permAddTP, permFeatureTP, permUpdateTP, permDeleteTP } = req.body;
 
@@ -839,7 +839,7 @@ app.post("/api/v1/tws/updateUser", async (req, res) => {
     }
 });
 
-app.post("/api/v1/tws/deleteUser", async (req, res) => {
+app.delete("/api/v1/tws/deleteUser", async (req, res) => {
     try {
         let { token, adminUser, adminPass, username } = req.body;
 
