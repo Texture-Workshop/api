@@ -1,7 +1,7 @@
 {
   "name": "texture-workshop-api",
   "description": "Backend of the new Texture Workshop API",
-  "version": "1.5.8",
+  "version": "1.6.0",
   "main": "app.js",
   "author": "M336",
   "license": "AGPL-3.0-only",
