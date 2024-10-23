@@ -312,6 +312,7 @@ app.get("/api/v1/tws/getPack/:pack", async (req, res) => {
 /* HTML webpages */
 // Everyone endpoints
 app.use("/registerUser", express.static(path.join(__dirname, "app", "html", "registerUser.html")));
+app.use("/userDelete", express.static(path.join(__dirname, "app", "html", "userDelete.html")));
 app.use("/changeUsername", express.static(path.join(__dirname, "app", "html", "changeUsername.html")));
 app.use("/changePassword", express.static(path.join(__dirname, "app", "html", "changePassword.html")));
 // Mod endpoints
@@ -642,6 +643,41 @@ app.post("/api/v1/tws/registerUser", async (req, res) => {
         });
     } catch (error) {
         log.error("Error registering new user:", error.message);
+        return res.status(500).send("Internal Server Error")
+    }
+});
+
+app.post("/api/v1/tws/userDelete", async (req, res) => {
+    try {
+        let { username, password } = req.body;
+        if (!username || !password) return res.status(400).json({ success: false, cause: "Bad Request" });
+        
+        if (!await verifyUser(db, username, password)) return res.status(401).json({ success: false, cause: "Invalid password/username" });
+
+        username = await encode.base64encode(username);
+
+        // Check if the username exists
+        let userExist = await new Promise(async (resolve, reject) => {
+            db.get("SELECT 1 FROM accounts WHERE userName = ?", [username], (error, row) => {
+                if (error) return reject(error);
+                resolve(row);
+            });
+        });
+        if (!userExist) return res.status(404).json({ success: false, cause: "Unknown user" });
+        
+        // Delete the user
+        db.run(
+            `DELETE FROM accounts WHERE userName = ?`, [username], async (error) => {
+                if (error) {
+                    log.error("Error deleting user:", error.message);
+                    return res.status(500).json({ success: false, cause: "Internal Server Error" });
+                }
+
+                log.info(`Deleted user "${await encode.base64decode(username)}"!`);
+                return res.status(200).json({ success: true, message: "User deleted!" });
+            });
+    } catch (error) {
+        log.error("Error deleting user:", error.message);
         return res.status(500).send("Internal Server Error")
     }
 });

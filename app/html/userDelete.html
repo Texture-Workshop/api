@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/css/tws.css">
+    <title>Delete User</title>
+</head>
+<body>
+	<span class="background"></span>
+    <h1>Delete User</h1>
+    <form id="deleteUserForm">
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username"><br>
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password"><br><br>
+
+        <label>
+            <input type="checkbox" required>
+            I confirm that I want to delete my account permanently. (<strong>irreversible</strong>)
+        </label><br><br>
+
+        <button type="submit">Submit</button>
+    </form>
+    <script>
+        const form = document.getElementById("userDeleteForm");
+
+        form.addEventListener("submit", function(event) {
+            event.preventDefault();
+
+            const formData = new FormData(form);
+            const body = new URLSearchParams(formData).toString();
+
+            // Use fetch API to submit form data to server
+            fetch("/api/v1/tws/userDelete", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "Accept": "application/json"
+                },
+                body
+            })
+            .then(response => {
+                const contentType = response.headers.get("content-type");
+                if (contentType && contentType.includes("application/json")) {
+                    return response.json();
+                } else {
+                    return response.text();
+                }
+            })
+            .then(data => {
+                if (typeof data === "object" && data.success !== undefined) {
+                    if (data.success) {
+                        alert(data.message);
+                    } else {
+                        alert("Oops! Looks like something wrong happened...\n" + (data.cause || data.message));
+                    }
+                } else {
+                    alert(data);
+                }
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                alert("An error occurred, please try again.");
+            });
+        });
+    </script>
+</body>
+</html>
