@@ -7,7 +7,7 @@ const logFilePath = path.join(__dirname, "..", "logs.txt");
 
 // Delete logs older than one week
 async function deleteLogs() {
-    try {
+/*    try {
         await fs.access(logFilePath);
         
         const stats = await fs.stat(logFilePath);
@@ -23,7 +23,7 @@ async function deleteLogs() {
         } else {
             log.error("Error checking logs file information:", error);
         }
-    }
+    }*/
 }
 
 // Simplified async functions that are related to console logging.
@@ -134,24 +134,12 @@ const encode = {
 
 // Simplified async functions that, for most, use the bcrypt module.
 const encrypt = {
-    // Generate a salt and returns it. Returns false if it fails to or one of the values is invalid.
-    generateSalt: async (saltRounds) => {
-        if (!saltRounds) return false;
+    generateSalt: (saltRounds) => {
         try {
-            const salt = await new Promise((resolve, reject) => {
-                bcrypt.genSalt(saltRounds, (error, salt) => {
-                    if (error) {
-                        log.error("Failed generating password salt:", error);
-                        reject(error);
-                    } else {
-                        resolve(salt);
-                    }
-                });
-            });
-            return salt;
+            return bcrypt.genSaltSync(saltRounds);
         } catch (error) {
             log.error("Failed generating password salt:", error);
-            return false;
+            return null;
         }
     },
 
@@ -159,20 +147,10 @@ const encrypt = {
     generateHash: async (password, salt) => {
         if (!password || !salt) return false;
         try {
-            const hash = await new Promise((resolve, reject) => {
-                bcrypt.hash(password, salt, (error, hash) => {
-                    if (error) {
-                        log.error("Failed generating password hash:", error);
-                        reject(error);
-                    } else {
-                        resolve(hash);
-                    }
-                });
-            });
-            return hash;
+            return bcrypt.hashSync(password, salt);
         } catch (error) {
             log.error("Failed generating password hash:", error);
-            return false;
+            return null;
         }
     },
 
@@ -180,17 +158,7 @@ const encrypt = {
     verifyPassword: async (password, hash) => {
         if (!password || !hash) return false;
         try {
-            const response = await new Promise((resolve, reject) => {
-                bcrypt.compare(password, hash, (error, response) => {
-                    if (error) {
-                        log.error("Failed checking for password:", error);
-                        reject(error);
-                    } else {
-                        resolve(response);
-                    }
-                });
-            });
-            return response;
+            return bcrypt.compareSync(password, hash);
         } catch (error) {
             log.error("Failed checking for password:", error);
             return false;
@@ -214,33 +182,21 @@ async function deleteFile(filePath) {
 // Tries to verify a user; Will check if they exist and will verify if their password is correct.
 async function verifyUser(db, username, password, checkPerm) {
     if (!db || !username || !password) return false;
-
     try {
-        username = await encode.base64encode(username);
+        username = encode.base64encode(username);
+        const row = db.prepare("SELECT * FROM accounts WHERE userName = ?").get(username);
 
-        const result = await new Promise((resolve, reject) => {
-            db.get("SELECT * FROM accounts WHERE userName = ?", [username], async (error, row) => {
-                if (error) {
-                    log.error("Failed checking for a user's authenticity:", error);
-                    return reject(false);
-                }
-                
-                // Check if user exists
-                if (!row) return reject(false);
+        if (!row) return false;
 
-                // Check if the password is valid
-                const passwordValid = await encrypt.verifyPassword(password, row.hash);
-                if (!passwordValid) return reject(false);
+        // Password verification
+        if (!encrypt.verifyPassword(password, row.hash)) return false;
 
-                // Check permission (if needed)
-                if (checkPerm) if (row[checkPerm.replace(/[^A-Za-z]/g, "")] < 1 && row.permAdmin < 1) return reject(false);
+        // Permission check (if needed)
+        if (checkPerm && row[checkPerm.replace(/[^A-Za-z]/g, "")] < 1 && row.permAdmin < 1) return false;
 
-                resolve(true);
-            });
-        });
-
-        return result;
+        return true;
     } catch (error) {
+        log.error("Failed verifying user:", error);
         return false;
     }
 }
