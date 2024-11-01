@@ -134,12 +134,24 @@ const encode = {
 
 // Simplified async functions that, for most, use the bcrypt module.
 const encrypt = {
-    generateSalt: (saltRounds) => {
+    // Generate a salt and returns it. Returns false if it fails to or one of the values is invalid.
+    generateSalt: async (saltRounds) => {
+        if (!saltRounds) return false;
         try {
-            return bcrypt.genSaltSync(saltRounds);
+            const salt = await new Promise((resolve, reject) => {
+                bcrypt.genSalt(saltRounds, (error, salt) => {
+                    if (error) {
+                        log.error("Failed generating password salt:", error);
+                        reject(error);
+                    } else {
+                        resolve(salt);
+                    }
+                });
+            });
+            return salt;
         } catch (error) {
             log.error("Failed generating password salt:", error);
-            return null;
+            return false;
         }
     },
 
@@ -147,10 +159,20 @@ const encrypt = {
     generateHash: async (password, salt) => {
         if (!password || !salt) return false;
         try {
-            return bcrypt.hashSync(password, salt);
+            const hash = await new Promise((resolve, reject) => {
+                bcrypt.hash(password, salt, (error, hash) => {
+                    if (error) {
+                        log.error("Failed generating password hash:", error);
+                        reject(error);
+                    } else {
+                        resolve(hash);
+                    }
+                });
+            });
+            return hash;
         } catch (error) {
             log.error("Failed generating password hash:", error);
-            return null;
+            return false;
         }
     },
 
@@ -158,7 +180,17 @@ const encrypt = {
     verifyPassword: async (password, hash) => {
         if (!password || !hash) return false;
         try {
-            return bcrypt.compareSync(password, hash);
+            const response = await new Promise((resolve, reject) => {
+                bcrypt.compare(password, hash, (error, response) => {
+                    if (error) {
+                        log.error("Failed checking for password:", error);
+                        reject(error);
+                    } else {
+                        resolve(response);
+                    }
+                });
+            });
+            return response;
         } catch (error) {
             log.error("Failed checking for password:", error);
             return false;
@@ -182,21 +214,33 @@ async function deleteFile(filePath) {
 // Tries to verify a user; Will check if they exist and will verify if their password is correct.
 async function verifyUser(db, username, password, checkPerm) {
     if (!db || !username || !password) return false;
+
     try {
-        username = encode.base64encode(username);
-        const row = db.prepare("SELECT * FROM accounts WHERE userName = ?").get(username);
+        username = await encode.base64encode(username);
 
-        if (!row) return false;
+        const result = await new Promise((resolve, reject) => {
+            db.get("SELECT * FROM accounts WHERE userName = ?", [username], async (error, row) => {
+                if (error) {
+                    log.error("Failed checking for a user's authenticity:", error);
+                    return reject(false);
+                }
+                
+                // Check if user exists
+                if (!row) return reject(false);
 
-        // Password verification
-        if (!encrypt.verifyPassword(password, row.hash)) return false;
+                // Check if the password is valid
+                const passwordValid = await encrypt.verifyPassword(password, row.hash);
+                if (!passwordValid) return reject(false);
 
-        // Permission check (if needed)
-        if (checkPerm && row[checkPerm.replace(/[^A-Za-z]/g, "")] < 1 && row.permAdmin < 1) return false;
+                // Check permission (if needed)
+                if (checkPerm) if (row[checkPerm.replace(/[^A-Za-z]/g, "")] < 1 && row.permAdmin < 1) return reject(false);
 
-        return true;
+                resolve(true);
+            });
+        });
+
+        return result;
     } catch (error) {
-        log.error("Failed verifying user:", error);
         return false;
     }
 }
