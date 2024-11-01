@@ -7,7 +7,7 @@ const logFilePath = path.join(__dirname, "..", "logs.txt");
 
 // Delete logs older than one week
 async function deleteLogs() {
-/*    try {
+    try {
         await fs.access(logFilePath);
         
         const stats = await fs.stat(logFilePath);
@@ -23,7 +23,7 @@ async function deleteLogs() {
         } else {
             log.error("Error checking logs file information:", error);
         }
-    }*/
+    }
 }
 
 // Simplified async functions that are related to console logging.
