@@ -195,7 +195,7 @@ app.get("/api/v1/tws/getLogo/:logo", async (req, res) => {
             try {
                 await fs.writeFile(logoCacheFilePath, logoBuffer);
             } catch (error) {
-                log.error("Failed to write logo in cache:", error.message);
+                log.error(`Failed to write logo in cache (#${logo}):`, error.message);
             }
         }
 
@@ -204,7 +204,7 @@ app.get("/api/v1/tws/getLogo/:logo", async (req, res) => {
         res.setHeader("Content-Type", "image/png");
         res.send(logoBuffer);
     } catch (error) {
-        log.error("Error while trying to get/return logo:", error.message);
+        log.error(`Error while trying to get/return logo (#${logo}):`, error.message);
         res.status(500).send("Internal Server Error");
     }
 });
@@ -248,7 +248,7 @@ app.get("/api/v1/tws/getPack/:pack", async (req, res) => {
             try {
                 await fs.writeFile(packCacheFilePath, packBuffer);
             } catch (error) {
-                log.error("Failed to write pack in cache:", error.message);
+                log.error(`Failed to write pack in cache (#${pack}):`, error.message);
             }
         }
 
@@ -259,7 +259,7 @@ app.get("/api/v1/tws/getPack/:pack", async (req, res) => {
         // Increment downloads after sending response
         db.prepare("UPDATE texturepacks SET downloads = downloads + 1 WHERE id = ?").run(pack);
     } catch (error) {
-        log.error("Error while trying to get/return pack:", error.message);
+        log.error(`Error while trying to get/return pack (#${pack}):`, error.message);
         res.status(500).send("Internal Server Error");
     }
 });
