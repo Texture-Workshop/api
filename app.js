@@ -405,7 +405,7 @@ app.patch("/api/v1/tws/updateTP", async (req, res) => {
                 db.prepare(`UPDATE texturepacks SET name = ?, lastUpdated = ? WHERE ID = ?`)
                     .run(name, Date.now(), id);
 
-                log.info(`${username} updated Texture Pack #${id}'s name to "${name}"`);
+                log.info(`${username} updated Texture Pack #${id}'s name to "${await encode.base64decode(name)}"`);
                 return res.status(200).json({ success: true, message: "Texture pack's name updated!" })
                 break;
 
