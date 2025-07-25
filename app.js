@@ -7,6 +7,7 @@ const Database = require("better-sqlite3");
 const axios = require("axios");
 const sharp = require("sharp");
 const path = require("path");
+const { query } = require("express");
 
 const { log, encode, deleteFile, verifyUser, encrypt } = require(path.join(__dirname, "util", "functions.js"));
 const { logRequests, countDownloads, convertLogo, tpCache, logoCache, bcryptRounds } = require(path.join(__dirname, "config.json"));
@@ -137,6 +138,99 @@ app.get("/api/v1/tws/getTPs", async (req, res) => {
     }
 });
 
+app.get("/api/v1/tws/getTPsCount", async (req, res) => {
+    let { version } = req.query;
+    res.setHeader("Content-Type", "application/json");
+
+    let queryFilter = "";
+    let params = [];
+    if (version) {
+        version = version.replace(/[^A-Za-z0-9 :\/?.]/g, "");
+        if (version) {
+            queryFilter = "WHERE gameVersion = ? OR gameVersion = 'Any'";
+            params.push(version);
+        }
+    }
+
+    try {
+        const result = db.prepare(`SELECT COUNT(*) AS count FROM texturepacks ${queryFilter}`).get(...params);
+        
+        return res.status(200).json({ success: true, version: version || "All", count: result.count });
+    } catch (error) {
+        log.error("Error fetching data from SQLite:", error.message);
+        return res.status(500).json({ success: false, cause: "Internal Server Error" });
+    }
+});
+
+app.get("/api/v2/tws/getTPs", async (req, res) => {
+    let { sort, page, version } = req.query;
+    res.setHeader("Content-Type", "application/json");
+
+    let result = {};
+    let queryOrder = "";
+
+    let baseWhere = "";
+    switch (sort) {
+        case "downloads":
+            queryOrder = "ORDER BY downloads DESC";
+            break;
+        case "recent":
+            queryOrder = "ORDER BY lastUpdated DESC";
+            break;
+        case "featured":
+            queryOrder = "WHERE feature >= 1 ORDER BY downloads DESC";
+            break;
+        default:
+            queryOrder = "ORDER BY feature DESC, downloads DESC";
+            break;
+    }
+
+    const pageNum = Math.max(parseInt(page) || 1, 1);
+    const offset = (pageNum - 1) * 10;
+    const limitClause = `LIMIT 10 OFFSET ${offset}`;
+
+    let whereClause = baseWhere;
+    let params = [];
+    if (version) {
+        version = version.replace(/[^A-Za-z0-9 :\/?.]/g, "");
+        if (whereClause) {
+            whereClause += " AND (gameVersion = ? OR gameVersion = 'Any')";
+        } else {
+            whereClause = "WHERE gameVersion = ? OR gameVersion = 'Any'";
+        }
+        params.push(version);
+    }
+
+    try {
+        const rows = db.prepare(`SELECT * FROM texturepacks ${whereClause} ${queryOrder} ${limitClause}`).all(...params);
+        
+        await Promise.all(rows.map(async (row, index) => {
+            result[offset + index + 1] = {
+                packID: row.ID,
+                packName: await encode.base64decode(row.name),
+                downloadLink: countDownloads ? `${API_URL}/getPack/${row.ID}.zip` : await encode.base64urldecode(row.download),
+                packLogo: convertLogo ? `${API_URL}/getLogo/${row.ID}.png` : await encode.base64urldecode(row.logo),
+                packDescription: await encode.base64decode(row.description),
+                packCreator: await encode.base64decode(row.creator),
+                packVersion: row.version,
+                gdVersion: row.gameVersion,
+                packFeature: row.feature,
+                packDownloads: row.downloads,
+                creationDate: row.creationDate,
+                lastUpdated: row.lastUpdated
+            }
+        })).then(async () => {
+            res.setHeader("Cache-Control", "public, max-age=3600, immutable"); // Cache for 1 hour
+            return res.status(200).json(result);
+        }).catch(async error => {
+            log.error("Error fetching data from SQLite:", error.message);
+            return res.status(500).json({ success: false, cause: "Internal Server Error" });
+        });
+    } catch (error) {
+        log.error("Error fetching data from SQLite:", error.message);
+        return res.status(500).json({ success: false, cause: "Internal Server Error" });
+    }
+});
 
 // Rate limiting (only apply it from here)
 if (process.env.RATE_LIMIT) {
