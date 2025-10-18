@@ -1,5 +1,5 @@
 > [!WARNING]
-> This code was made without being attended to be released, so expect it to be messy and uncommented.
+> This source code was never intended to be released publicly, so expect it to be messy and uncommented.
 
 # Texture Workshop's API & Website
 The source code of the [Texture Workshop mod](https://geode-sdk.org/mods/uproxide.textures)'s [API](https://tws.m336.dev/api/v1/tws/getTPs) & its [website](https://tws.m336.dev/)
