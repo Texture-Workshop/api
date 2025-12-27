@@ -16,7 +16,7 @@ const { version } = require(path.join(__dirname, "package.json"));
 
 const fs = require("fs").promises;
 
-const PORT = process.env.PORT ? process.env.PORT : 3300;
+const PORT = process.env.PORT || 3000;
 
 const TOKEN = process.env.TOKEN;
 if (!TOKEN) {
